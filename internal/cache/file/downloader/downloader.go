@@ -17,6 +17,7 @@ package downloader
 import (
 	"os"
 
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/cache/data"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/cache/lru"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/cache/util"
@@ -58,11 +59,13 @@ type JobManager struct {
 
 	// Specifies whether Crc check needs to be done.
 	enableCrcCheck bool
+
+    // Akeso configuration
+    akesoConfig *akeso.Config
 }
 
-func NewJobManager(fileInfoCache *lru.Cache, filePerm os.FileMode, dirPerm os.FileMode, cacheDir string, sequentialReadSizeMb int32, enableCrcCheck bool) (jm *JobManager) {
-	jm = &JobManager{fileInfoCache: fileInfoCache, filePerm: filePerm,
-		dirPerm: dirPerm, cacheDir: cacheDir, sequentialReadSizeMb: sequentialReadSizeMb, enableCrcCheck: enableCrcCheck}
+func NewJobManager(fileInfoCache *lru.Cache, filePerm os.FileMode, dirPerm os.FileMode, cacheDir string, sequentialReadSizeMb int32, enableCrcCheck bool, akesoConfig *akeso.Config) (jm *JobManager) {
+	jm = &JobManager{fileInfoCache: fileInfoCache, filePerm: filePerm, dirPerm: dirPerm, cacheDir: cacheDir, sequentialReadSizeMb: sequentialReadSizeMb, enableCrcCheck: enableCrcCheck, akesoConfig: akesoConfig}
 	jm.mu = locker.New("JobManager", func() {})
 	jm.jobs = make(map[string]*Job)
 	return
@@ -99,7 +102,7 @@ func (jm *JobManager) CreateJobIfNotExists(object *gcs.MinObject, bucket gcs.Buc
 	removeJobCallback := func() {
 		jm.removeJob(object.Name, bucket.Name())
 	}
-	job = NewJob(object, bucket, jm.fileInfoCache, jm.sequentialReadSizeMb, fileSpec, removeJobCallback, jm.enableCrcCheck)
+	job = NewJob(object, bucket, jm.fileInfoCache, jm.sequentialReadSizeMb, fileSpec, removeJobCallback, jm.enableCrcCheck, jm.akesoConfig)
 	jm.jobs[objectPath] = job
 	return job
 }

@@ -21,7 +21,14 @@ import (
 
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/gcs"
 	"golang.org/x/net/context"
+
+    // SMH
+	"encoding/hex"
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/logger"
+	"github.com/etclab/aes256"
 )
+
+const SMH_PREFIX = "[SMH] internal/gcsx/syncer.go:"
 
 // MtimeMetadataKey objects are created by Syncer.SyncObject and contain a
 // metadata field with this key and with a UTC mtime in the format defined
@@ -90,6 +97,8 @@ func (oc *fullObjectCreator) Create(
 
 	var req *gcs.CreateObjectRequest
 	if srcObject == nil {
+        logger.Debugf("%s:fullObjectCreator.Create(%s) - srcObject is nil", objectName, SMH_PREFIX)
+
 		var precond int64
 		req = &gcs.CreateObjectRequest{
 			Name:                   objectName,
@@ -98,6 +107,7 @@ func (oc *fullObjectCreator) Create(
 			Metadata:               metadataMap,
 		}
 	} else {
+        logger.Debugf("%s:fullObjectCreator.Create(%s) - srcObject is not nil", objectName, SMH_PREFIX)
 		for key, value := range srcObject.Metadata {
 			metadataMap[key] = value
 		}
@@ -122,6 +132,12 @@ func (oc *fullObjectCreator) Create(
 	if mtime != nil {
 		metadataMap[MtimeMetadataKey] = mtime.UTC().Format(time.RFC3339Nano)
 	}
+
+    if _, ok := metadataMap["akeso_data_nonce"]; !ok {
+        logger.Debugf("%s:fullObjectCreate.Create(%s): srcObject does not have an akeso_data_nonce; adding one", objectName, SMH_PREFIX)
+        nonce := aes256.NewRandomNonce()
+        metadataMap["akeso_data_nonce"] = hex.EncodeToString(nonce)
+    }
 
 	o, err = oc.bucket.CreateObject(ctx, req)
 	if err != nil {
@@ -183,6 +199,9 @@ func (os *syncer) SyncObject(
 	objectName string,
 	srcObject *gcs.Object,
 	content TempFile) (o *gcs.Object, err error) {
+
+    logger.Debugf("%s:SyncObject - syncing objectName=%s srcObject=%v content.Name()=%s", SMH_PREFIX, objectName, srcObject, content.Name())
+
 	// Stat the content.
 	sr, err := content.Stat()
 	if err != nil {
@@ -200,6 +219,7 @@ func (os *syncer) SyncObject(
 			err = fmt.Errorf("error in seeking: %w", err)
 			return
 		}
+        logger.Debugf("%s:SyncObject - invoking syncer.fullCreator.Create()", SMH_PREFIX)
 		return os.fullCreator.Create(ctx, objectName, srcObject, sr.Mtime, content)
 	}
 

@@ -26,7 +26,12 @@ import (
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/cache/lru"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/cache/util"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/gcs"
+
+    // SMH
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/logger"
 )
+
+const SMH_PREFIX = "[smh] internal/cache/file/cache_handle.go:"
 
 type CacheHandle struct {
 	// fileHandle to a local file which contains locally downloaded data.
@@ -139,8 +144,11 @@ func (fch *CacheHandle) validateEntryInFileInfoCache(bucket gcs.Bucket, object *
 // download. Additionally, for random reads, the download will not be
 // initiated if fch.cacheFileForRangeRead is false.
 func (fch *CacheHandle) Read(ctx context.Context, bucket gcs.Bucket, object *gcs.MinObject, offset int64, dst []byte) (n int, cacheHit bool, err error) {
+    logger.Debugf("%s:(fch *CacheHandle) Read()", SMH_PREFIX)
+
 	err = fch.validateCacheHandle()
 	if err != nil {
+        logger.Debugf("%s:(fch *CacheHandle) Read() - fch.valideCacheHandle returned err: %v", SMH_PREFIX, err)
 		return
 	}
 
@@ -156,6 +164,8 @@ func (fch *CacheHandle) Read(ctx context.Context, bucket gcs.Bucket, object *gcs
 		waitForDownload = false
 	}
 
+    logger.Debugf("%s:(fch *CacheHandle) Read() - isSequentialRead: %t, waitForDownload: %t", SMH_PREFIX, isSequentialRead, waitForDownload)
+
 	// We need to download the data till offset + len(dst), if not already.
 	bufferLen := int64(len(dst))
 	requiredOffset := offset + bufferLen
@@ -170,6 +180,7 @@ func (fch *CacheHandle) Read(ctx context.Context, bucket gcs.Bucket, object *gcs
 	// If fileDownloadJob is not nil, it's better to get status of cache file
 	// from the job itself than to use file info cache.
 	if fch.fileDownloadJob != nil {
+        logger.Debugf("%s:(fch *CacheHandle) Read() - fch.FileDownloadJob != nil", SMH_PREFIX)
 		jobStatus := fch.fileDownloadJob.GetStatus()
 		// If cacheFileForRangeRead is false and readType is random, download will
 		// not be initiated.
@@ -194,9 +205,11 @@ func (fch *CacheHandle) Read(ctx context.Context, bucket gcs.Bucket, object *gcs
 		}
 
 		if err = fch.shouldReadFromCache(&jobStatus, requiredOffset); err != nil {
+            logger.Debugf("%s:(fch *CacheHandle) Read() - fch.shouldReadFromCache failed: %v", SMH_PREFIX, err)
 			return 0, false, err
 		}
 	} else {
+        logger.Debugf("%s:(fch *CacheHandle) Read() - fch.FileDownloadJob == nil", SMH_PREFIX)
 		// If fileDownloadJob is nil then it means either the job is successfully
 		// completed or failed. The offset must be equal to size of object for job
 		// to be completed.

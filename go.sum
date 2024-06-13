@@ -398,6 +398,10 @@ github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7
 github.com/envoyproxy/protoc-gen-validate v0.6.7/go.mod h1:dyJXwwfPK2VSqiB9Klm1J6romD608Ba7Hij42vrOBCo=
 github.com/envoyproxy/protoc-gen-validate v1.0.4 h1:gVPz/FMfvh57HdSJQyvBtF00j8JU4zdyUgIUNhlgg0A=
 github.com/envoyproxy/protoc-gen-validate v1.0.4/go.mod h1:qys6tmnRsYrQqIhm2bvKZH4Blx/1gTIZ2UKVY1M+Yew=
+github.com/etclab/aes256 v0.1.0 h1:PyZOoc76mU2w3TTjgeYv3HVL6LFeu3o1MHQwUKEQhCE=
+github.com/etclab/aes256 v0.1.0/go.mod h1:/ZpruxjgRpfbgSJmKYazZnuBwA8EG7h80VCOkyXFqRo=
+github.com/etclab/mu v0.1.0 h1:E2P6a0KOAnqv1f2dL6IQ1ibhax558T8nvWh76q3SV/8=
+github.com/etclab/mu v0.1.0/go.mod h1:Q1g67Uyx3LUHW0YioY/ipPfKTQe/8NjYlpevy4zgGyk=
 github.com/evanphx/json-patch v4.9.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.11.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.12.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=

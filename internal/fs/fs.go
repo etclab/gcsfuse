@@ -45,6 +45,9 @@ import (
 	"github.com/jacobsa/fuse/fuseops"
 	"github.com/jacobsa/fuse/fuseutil"
 	"github.com/jacobsa/timeutil"
+
+    // SMH
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 )
 
 type ServerConfig struct {
@@ -127,6 +130,9 @@ type ServerConfig struct {
 
 	// MountConfig has all the config specified by the user using configFile flag.
 	MountConfig *config.MountConfig
+
+    // AkesoConfig has all the akeso-related configuration options
+    AkesoConfig *akeso.Config 
 }
 
 // Create a fuse file system server according to the supplied configuration.
@@ -192,6 +198,7 @@ func NewFileSystem(
 		mountConfig:                cfg.MountConfig,
 		fileCacheHandler:           fileCacheHandler,
 		cacheFileForRangeRead:      cfg.MountConfig.FileCacheConfig.CacheFileForRangeRead,
+        akesoConfig:                cfg.AkesoConfig,
 	}
 
 	// Set up root bucket
@@ -201,7 +208,7 @@ func NewFileSystem(
 		root = makeRootForAllBuckets(fs)
 	} else {
 		logger.Info("Set up root directory for bucket " + cfg.BucketName)
-		syncerBucket, err := fs.bucketManager.SetUpBucket(ctx, cfg.BucketName, false)
+		syncerBucket, err := fs.bucketManager.SetUpBucket(ctx, cfg.BucketName, false, fs.akesoConfig)
 		if err != nil {
 			return nil, fmt.Errorf("SetUpBucket: %w", err)
 		}
@@ -244,7 +251,7 @@ func createFileCacheHandler(cfg *ServerConfig) (fileCacheHandler *file.CacheHand
 	}
 
 	jobManager := downloader.NewJobManager(fileInfoCache, filePerm, dirPerm, cacheDir,
-		cfg.SequentialReadSizeMb, cfg.MountConfig.EnableCrcCheck)
+		cfg.SequentialReadSizeMb, cfg.MountConfig.EnableCrcCheck, cfg.AkesoConfig)
 	fileCacheHandler = file.NewCacheHandler(fileInfoCache, jobManager,
 		cacheDir, filePerm, dirPerm)
 	return
@@ -293,6 +300,7 @@ func makeRootForAllBuckets(fs *fileSystem) inode.DirInode {
 			Mtime: fs.mtimeClock.Now(),
 		},
 		fs.bucketManager,
+        fs.akesoConfig,
 	)
 }
 
@@ -469,6 +477,9 @@ type fileSystem struct {
 	// cacheFileForRangeRead when true downloads file into cache even for
 	// random file access.
 	cacheFileForRangeRead bool
+
+    // AkesoConfig has all the akeso-related configuration options
+    akesoConfig *akeso.Config 
 }
 
 ////////////////////////////////////////////////////////////////////////

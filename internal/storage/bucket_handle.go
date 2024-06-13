@@ -36,7 +36,17 @@ import (
 
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
+
+
+    // SMH
+    "bytes"
+    "encoding/hex"
+    "github.com/etclab/aes256"
+    "github.com/etclab/mu"
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 )
+
+const SMH_PREFIX = "[SMH] internal/storage/bucket_handle.go"
 
 type bucketHandle struct {
 	gcs.Bucket
@@ -44,6 +54,9 @@ type bucketHandle struct {
 	bucketName    string
 	bucketType    gcs.BucketType
 	controlClient StorageControlClient
+
+    // SMH
+    akesoConfig   *akeso.Config
 }
 
 func (bh *bucketHandle) Name() string {
@@ -86,6 +99,7 @@ func (bh *bucketHandle) BucketType() gcs.BucketType {
 func (bh *bucketHandle) NewReader(
 	ctx context.Context,
 	req *gcs.ReadObjectRequest) (io.ReadCloser, error) {
+    logger.Debugf("%s:bucketHandle.NewReader() - %s", SMH_PREFIX, req.Name)
 	// Initialising the starting offset and the length to be read by the reader.
 	start := int64(0)
 	length := int64(-1)
@@ -108,6 +122,7 @@ func (bh *bucketHandle) NewReader(
 		obj = obj.ReadCompressed(true)
 	}
 
+    // SMH - you probably want to wrap this for akeso
 	// NewRangeReader creates a "storage.Reader" object which is also io.ReadCloser since it contains both Read() and Close() methods present in io.ReadCloser interface.
 	return obj.NewRangeReader(ctx, start, length)
 }
@@ -173,6 +188,7 @@ func (b *bucketHandle) StatObject(ctx context.Context,
 }
 
 func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectRequest) (o *gcs.Object, err error) {
+    logger.Debugf("%s:bucketHandle.CreateObject() - %s", SMH_PREFIX, req.Name)
 	obj := bh.bucket.Object(req.Name)
 
 	// GenerationPrecondition - If non-nil, the object will be created/overwritten
@@ -209,8 +225,28 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 		logger.Tracef("gcs: Req %#16x: -- CreateObject(%q): %20v bytes uploaded so far", ctx.Value(gcs.ReqIdField), req.Name, bytesUploadedSoFar)
 	}
 
+    // SMH: here is where you'll want to encrypt
+    var data []byte
+    data, err = io.ReadAll(req.Contents)
+    if err != nil {
+        err = fmt.Errorf("[SMH] error in io.ReadAll: %w", err)
+    }
+    hexNonce, ok := req.Metadata["akeso_data_nonce"]
+    if !ok {
+        // TODO: just return an error
+        mu.Panicf("req.Metadata[\"akeso_data_nonce\"] does not exist")
+    }
+    nonce, err := hex.DecodeString(hexNonce)
+    if err != nil {
+        // TODO: just return an error
+        mu.Panicf("hex.DecodeString(hexNonce=%q) failed", hexNonce)
+    }
+    data = aes256.EncryptGCM(bh.akesoConfig.Key, nonce, data, nil)
+    encReader := bytes.NewReader(data)
+
 	// Copy the contents to the writer.
-	if _, err = io.Copy(wc, req.Contents); err != nil {
+	//if _, err = io.Copy(wc, req.Contents); err != nil {
+	if _, err = io.Copy(wc, encReader); err != nil {
 		err = fmt.Errorf("error in io.Copy: %w", err)
 		return
 	}

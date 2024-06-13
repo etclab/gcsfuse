@@ -383,6 +383,28 @@ func newApp() (app *cli.App) {
 				Value: config.DefaultExperimentalMetadataPrefetchOnMount,
 				Usage: "Experimental: This indicates whether or not to prefetch the metadata (prefilling of metadata caches and creation of inodes) of the mounted bucket at the time of mounting the bucket. Supported values: \"disabled\", \"sync\" and \"async\". Any other values will return error on mounting. This is applicable only to static mounting, and not to dynamic mounting.",
 			},
+
+			/////////////////////////
+			// Akeso
+			/////////////////////////
+
+            cli.StringFlag{
+                Name: "akeso_strategy",
+                Value: "statickey",
+                Usage: "The Akeso encryption strategy to use.",
+            },
+
+            cli.StringFlag{
+                Name: "akeso_dir",
+                Value: "",
+                Usage: "The Akeso direcotry for storing keying material.",
+            },
+
+            cli.StringFlag{
+                Name: "akeso_pubsub",
+                Value: "",
+                Usage: "The Akeso pubsub channel.",
+            },
 		},
 	}
 
@@ -456,6 +478,12 @@ type flagStorage struct {
 	// This is applicable only to single-bucket mount-points, and not to dynamic-mount points. This is because dynamic-mounts don't mount the bucket(s) at the time of
 	// gcsfuse command itself, which flag is targeted at.
 	ExperimentalMetadataPrefetchOnMount string
+
+
+    // Aekso
+    AkesoStrategy   string
+    AkesoPubSub     string
+    AkesoDir        string
 }
 
 func resolveFilePath(filePath string, configKey string) (resolvedPath string, err error) {
@@ -498,6 +526,11 @@ func resolvePathForTheFlagsInContext(c *cli.Context) (err error) {
 	err = resolvePathForTheFlagInContext("config-file", c)
 	if err != nil {
 		return fmt.Errorf("resolving for config-file: %w", err)
+	}
+
+	err = resolvePathForTheFlagInContext("akeso_dir", c)
+	if err != nil {
+        return fmt.Errorf("resolving for akeso_dir: %w", err)
 	}
 
 	return
@@ -600,6 +633,11 @@ func populateFlags(c *cli.Context) (flags *flagStorage, err error) {
 
 		// Post-mount actions
 		ExperimentalMetadataPrefetchOnMount: c.String(ExperimentalMetadataPrefetchOnMountFlag),
+
+        // Akeso
+        AkesoStrategy:  c.String("akeso_strategy"),
+        AkesoPubSub:    c.String("akeso_pubsub"),
+        AkesoDir:       c.String("akeso_dir"),
 	}
 
 	// Handle the repeated "-o" flag.

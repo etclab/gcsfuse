@@ -23,7 +23,12 @@ import (
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/gcsx"
 	"github.com/jacobsa/syncutil"
 	"golang.org/x/net/context"
+
+    // SMH
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/logger"
 )
+
+const SMH_PREFIX = "[SMH] internal/fs/handle/file.go:"
 
 type FileHandle struct {
 	inode *inode.FileInode
@@ -104,6 +109,7 @@ func (fh *FileHandle) Read(ctx context.Context, dst []byte, offset int64, sequen
 	if fh.reader != nil {
 		fh.inode.Unlock()
 
+        logger.Debugf("%s:(fh *FileHandle) Read() - calling fh.reader.ReadAt(offset=%d)", SMH_PREFIX, offset)
 		n, _, err = fh.reader.ReadAt(ctx, dst, offset)
 		switch {
 		case err == io.EOF:
@@ -119,6 +125,7 @@ func (fh *FileHandle) Read(ctx context.Context, dst []byte, offset int64, sequen
 
 	// Otherwise we must fall through to the inode.
 	defer fh.inode.Unlock()
+    logger.Debugf("%s:(fh *FileHandle) Read() - calling fh.inode.Read(offset=%d)", SMH_PREFIX, offset)
 	n, err = fh.inode.Read(ctx, dst, offset)
 
 	return
@@ -142,6 +149,7 @@ func (fh *FileHandle) checkInvariants() {
 // LOCKS_REQUIRED(fh)
 // LOCKS_REQUIRED(fh.inode)
 func (fh *FileHandle) tryEnsureReader(ctx context.Context, sequentialReadSizeMb int32) (err error) {
+    logger.Debugf("%s:(fh *FileHandle) tryEnsureReader()", SMH_PREFIX)
 	// If content cache enabled, CacheEnsureContent forces the file handler to fall through to the inode
 	// and fh.inode.SourceGenerationIsAuthoritative() will return false
 	err = fh.inode.CacheEnsureContent(ctx)
@@ -151,6 +159,7 @@ func (fh *FileHandle) tryEnsureReader(ctx context.Context, sequentialReadSizeMb 
 	// If the inode is dirty, there's nothing we can do. Throw away our reader if
 	// we have one.
 	if !fh.inode.SourceGenerationIsAuthoritative() {
+        logger.Debugf("%s:(fh *FileHandle) tryEnsureReader() - not authoritative", SMH_PREFIX)
 		if fh.reader != nil {
 			fh.reader.Destroy()
 			fh.reader = nil
@@ -163,6 +172,7 @@ func (fh *FileHandle) tryEnsureReader(ctx context.Context, sequentialReadSizeMb 
 	// can use it. Otherwise we must throw it away.
 	if fh.reader != nil {
 		if fh.reader.Object().Generation == fh.inode.SourceGeneration().Object {
+            logger.Debugf("%s:(fh *FileHandle) tryEnsureReader() - already have reader at appropriate generation", SMH_PREFIX)
 			return
 		}
 		fh.reader.Destroy()
@@ -170,6 +180,7 @@ func (fh *FileHandle) tryEnsureReader(ctx context.Context, sequentialReadSizeMb 
 	}
 
 	// Attempt to create an appropriate reader.
+    logger.Debugf("%s:(fh *FileHandle) tryEnsureReader() - creating a gcsx.NewRandomReader", SMH_PREFIX)
 	rr := gcsx.NewRandomReader(fh.inode.Source(), fh.inode.Bucket(), sequentialReadSizeMb, fh.fileCacheHandler, fh.cacheFileForRangeRead)
 
 	fh.reader = rr

@@ -33,6 +33,9 @@ import (
 	// Side effect to run grpc client with direct-path on gcp machine.
 	_ "google.golang.org/grpc/balancer/rls"
 	_ "google.golang.org/grpc/xds/googledirectpath"
+
+    // SMH
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 )
 
 type StorageHandle interface {
@@ -41,7 +44,7 @@ type StorageHandle interface {
 	// to that project rather than to the bucket's owning project.
 	//
 	// A user-project is required for all operations on Requester Pays buckets.
-	BucketHandle(bucketName string, billingProject string) (bh *bucketHandle)
+	BucketHandle(bucketName string, billingProject string, akesoConfig *akeso.Config) (bh *bucketHandle)
 }
 
 type storageClient struct {
@@ -198,7 +201,7 @@ func NewStorageHandle(ctx context.Context, clientConfig storageutil.StorageClien
 	return
 }
 
-func (sh *storageClient) BucketHandle(bucketName string, billingProject string) (bh *bucketHandle) {
+func (sh *storageClient) BucketHandle(bucketName string, billingProject string, akesoConfig *akeso.Config) (bh *bucketHandle) {
 	storageBucketHandle := sh.client.Bucket(bucketName)
 
 	if billingProject != "" {
@@ -209,6 +212,8 @@ func (sh *storageClient) BucketHandle(bucketName string, billingProject string) 
 		bucket:        storageBucketHandle,
 		bucketName:    bucketName,
 		controlClient: sh.storageControlClient,
+        // SMH
+        akesoConfig:   akesoConfig,
 	}
 	return
 }

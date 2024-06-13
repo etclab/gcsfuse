@@ -27,6 +27,9 @@ import (
 	"github.com/jacobsa/fuse/fuseops"
 	"github.com/jacobsa/fuse/fuseutil"
 	"golang.org/x/net/context"
+
+    // SMH
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 )
 
 // An inode that
@@ -60,6 +63,8 @@ type baseDirInode struct {
 
 	// GUARDED_BY(mu)
 	buckets map[string]gcsx.SyncerBucket
+
+    akesoConfig *akeso.Config
 }
 
 // NewBaseDirInode returns a baseDirInode that acts as the directory of
@@ -68,13 +73,15 @@ func NewBaseDirInode(
 	id fuseops.InodeID,
 	name Name,
 	attrs fuseops.InodeAttributes,
-	bm gcsx.BucketManager) (d DirInode) {
+	bm gcsx.BucketManager,
+    akesoConfig *akeso.Config) (d DirInode) {
 	typed := &baseDirInode{
 		id:            id,
 		name:          NewRootName(""),
 		attrs:         attrs,
 		bucketManager: bm,
 		buckets:       make(map[string]gcsx.SyncerBucket),
+        akesoConfig:   akesoConfig,
 	}
 	typed.lc.Init(id)
 	typed.mu = locker.NewRW("BaseDirInode"+name.GcsObjectName(), func() {})
@@ -155,7 +162,7 @@ func (d *baseDirInode) LookUpChild(ctx context.Context, name string) (*Core, err
 	var err error
 	bucket, ok := d.buckets[name]
 	if !ok {
-		bucket, err = d.bucketManager.SetUpBucket(ctx, name, true)
+		bucket, err = d.bucketManager.SetUpBucket(ctx, name, true, d.akesoConfig)
 		if err != nil {
 			return nil, err
 		}

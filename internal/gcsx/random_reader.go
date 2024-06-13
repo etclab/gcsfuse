@@ -32,6 +32,8 @@ import (
 	"golang.org/x/net/context"
 )
 
+const smh_prefix = "[SMH] internal/gcsx/random_reader.go:"
+
 // MB is 1 Megabyte. (Silly comment to make the lint warning go away)
 const MB = 1 << 20
 
@@ -167,7 +169,7 @@ func (rr *randomReader) CheckInvariants() {
 func (rr *randomReader) tryReadingFromFileCache(ctx context.Context,
 	p []byte,
 	offset int64) (n int, cacheHit bool, err error) {
-
+    logger.Debugf("%s:(rr *randomReader) tryReadingFromFileCache - rr.fileCacheHandler: %v", smh_prefix, rr.fileCacheHandler)
 	if rr.fileCacheHandler == nil {
 		return
 	}
@@ -206,6 +208,7 @@ func (rr *randomReader) tryReadingFromFileCache(ctx context.Context,
 	}()
 
 	// Create fileCacheHandle if not already.
+    logger.Debugf("%s:(rr *randomReader) tryReadingFromFileCache - rr.fileCacheHandle: %v", smh_prefix, rr.fileCacheHandle)
 	if rr.fileCacheHandle == nil {
 		rr.fileCacheHandle, err = rr.fileCacheHandler.GetCacheHandle(rr.object, rr.bucket, rr.cacheFileForRangeRead, offset)
 		if err != nil {
@@ -225,6 +228,7 @@ func (rr *randomReader) tryReadingFromFileCache(ctx context.Context,
 	}
 
 	n, cacheHit, err = rr.fileCacheHandle.Read(ctx, rr.bucket, rr.object, offset, p)
+    logger.Debugf("%s:(rr *randomReader) tryReadingFromFileCache - rr.fileCacheHandle.Read() returned n=%d, cacheHit=%t, err=%v", smh_prefix, n, cacheHit, err)
 	if err == nil {
 		return
 	}
@@ -263,16 +267,19 @@ func (rr *randomReader) ReadAt(
 	// GCS, cached in file and then served from that file. But the cacheHit is
 	// false in that case.
 	n, cacheHit, err = rr.tryReadingFromFileCache(ctx, p, offset)
+    logger.Debugf("%s:(rr *randomReader) ReadAt() - tryReadingFromFileCache returned n=%d, cacheHit=%t, err=%v", smh_prefix, n, cacheHit, err)
 	if err != nil {
 		err = fmt.Errorf("ReadAt: while reading from cache: %w", err)
 		return
 	}
+
 	// Data was served from cache.
 	if cacheHit || n == len(p) || (n < len(p) && uint64(offset)+uint64(n) == rr.object.Size) {
 		return
 	}
 
 	for len(p) > 0 {
+        logger.Debugf("%s:(rr *randomReader) ReadAt() - main loop: len(p) = %d", smh_prefix, len(p))
 		// Have we blown past the end of the object?
 		if offset >= int64(rr.object.Size) {
 			err = io.EOF

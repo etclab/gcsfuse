@@ -28,6 +28,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/etclab/aes256"
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/canned"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/config"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/locker"
@@ -156,6 +158,21 @@ func mountWithArgs(
 		}
 	}
 
+
+    // Akeso configuration
+    var key []byte
+    key, err = aes256.ReadKeyFile(filepath.Join(flags.AkesoDir, "key"))
+    if err != nil {
+	    err = fmt.Errorf("Failed to read Akeso key: %w", err)
+		return
+    }
+    akesoConfig := &akeso.Config{
+        AkesoDir: flags.AkesoDir, 
+        Strategy: flags.AkesoStrategy,
+        PubSub: flags.AkesoPubSub,
+        Key: key,
+    }
+
 	// Mount the file system.
 	logger.Infof("Creating a mount at %q\n", mountPoint)
 	mfs, err = mountWithStorageHandle(
@@ -164,6 +181,7 @@ func mountWithArgs(
 		mountPoint,
 		flags,
 		mountConfig,
+        akesoConfig,
 		storageHandle)
 
 	if err != nil {

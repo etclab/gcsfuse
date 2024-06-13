@@ -1,0 +1,63 @@
+NAME:
+   gcsfuse - Mount a specified GCS bucket or all accessible buckets locally
+
+USAGE:
+   gcsfuse [global options] [bucket] mountpoint
+   
+VERSION:
+   unknown (Go version go1.22.3)
+   
+GLOBAL OPTIONS:
+   --app-name value                                      The application name of this mount.
+   --foreground                                          Stay in the foreground after mounting.
+   --config-file value                                   The path to the config file where all gcsfuse related config needs to be specified. Refer to 'https://cloud.google.com/storage/docs/gcsfuse-cli#config-file' for possible configurations.
+   -o value                                              Additional system-specific mount options. Multiple options can be passed as comma separated. For readonly, use --o ro
+   --dir-mode value                                      Permissions bits for directories, in octal. (default: 755)
+   --file-mode value                                     Permission bits for files, in octal. (default: 644)
+   --uid value                                           UID owner of all inodes. (default: -1)
+   --gid value                                           GID owner of all inodes. (default: -1)
+   --implicit-dirs                                       Implicitly define directories based on content. See files and directories in docs/semantics for more information
+   --only-dir value                                      Mount only a specific directory within the bucket. See docs/mounting for more information
+   --rename-dir-limit value                              Allow rename a directory containing fewer descendants than this limit. (default: 0)
+   --ignore-interrupts                                   Instructs gcsfuse to ignore system interrupt signals (like SIGINT, triggered by Ctrl+C). This prevents those signals from immediately terminating gcsfuse inflight operations.
+   --custom-endpoint value                               Specifies an alternative custom endpoint for fetching data. Should only be used for testing. The custom endpoint must support the equivalent resources and operations as the GCS JSON endpoint, https://storage.googleapis.com/storage/v1. If a custom endpoint is not specified, GCSFuse uses the global GCS JSON API endpoint, https://storage.googleapis.com/storage/v1.
+   --anonymous-access                                    Authentication is enabled by default. This flag will disable authentication
+   --billing-project value                               Project to use for billing when accessing a bucket enabled with “Requester Pays” (default: none)
+   --key-file value                                      Absolute path to JSON key file for use with GCS. (default: none, Google application default credentials used)
+   --token-url value                                     A url for getting an access token when the key-file is absent.
+   --reuse-token-from-url                                If false, the token acquired from token-url is not reused.
+   --limit-bytes-per-sec value                           Bandwidth limit for reading data, measured over a 30-second window. (use -1 for no limit) (default: -1)
+   --limit-ops-per-sec value                             Operations per second limit, measured over a 30-second window (use -1 for no limit) (default: -1)
+   --sequential-read-size-mb value                       File chunk size to read from GCS in one call. Need to specify the value in MB. ChunkSize less than 1MB is not supported (default: 200)
+   --max-retry-sleep value                               The maximum duration allowed to sleep in a retry loop with exponential backoff for failed requests to GCS backend. Once the backoff duration exceeds this limit, the retry continues with this specified maximum value. (default: 30s)
+   --stat-cache-capacity value                           How many entries can the stat-cache hold (impacts memory consumption). This flag has been deprecated (starting v2.0) and in its place only metadata-cache:stat-cache-max-size-mb in the gcsfuse config-file will be supported. For now, the value of stat-cache-capacity will be translated to the next higher corresponding value of metadata-cache:stat-cache-max-size-mb (assuming stat-cache entry-size ~= 1640 bytes, including 1400 for positive entry and 240 for corresponding negative entry), when metadata-cache:stat-cache-max-size-mb is not set. (default: 20460)
+   --stat-cache-ttl value                                How long to cache StatObject results and inode attributes. This flag has been deprecated (starting v2.0) and in its place only metadata-cache:ttl-secs in the gcsfuse config-file will be supported. For now, the minimum of stat-cache-ttl and type-cache-ttl values, rounded up to the next higher multiple of a second, is used as ttl for both stat-cache and type-cache, when metadata-cache:ttl-secs is not set. (default: 1m0s)
+   --type-cache-ttl value                                How long to cache name -> file/dir mappings in directory inodes. This flag has been deprecated (starting v2.0) and in its place only metadata-cache:ttl-secs in the gcsfuse config-file will be supported. For now, the minimum of stat-cache-ttl and type-cache-ttl values, rounded up to the next higher multiple of a second, is used as ttl for both stat-cache and type-cache, when metadata-cache:ttl-secs is not set. (default: 1m0s)
+   --kernel-list-cache-ttl-secs value                    How long the directory listing (output of ls <dir>) should be cached in the kernel page cache.If a particular directory cache entry is kept by kernel for longer than TTL, then it will be sent for invalidation by gcsfuse on next opendir (comes in the start, as part of next listing) call. 0 means no caching. Use -1 to cache for lifetime (no ttl). Negative value other than -1 will throw error. (default: 0)
+   --http-client-timeout value                           The time duration that http client will wait to get response from the server. The default value 0 indicates no timeout.  (default: 0s)
+   --max-retry-duration value                            This flag is currently unused. (default: -1s)
+   --retry-multiplier value                              Param for exponential backoff algorithm, which is used to increase waiting time b/w two consecutive retries. (default: 2)
+   --temp-dir value                                      Path to the temporary directory where writes are staged prior to upload to Cloud Storage. (default: system default, likely /tmp)
+   --client-protocol value                               The protocol used for communicating with the GCS backend. Value can be 'http1' (HTTP/1.1) or 'http2' (HTTP/2) or grpc. (default: "http1")
+   --max-conns-per-host value                            The max number of TCP connections allowed per server. This is effective when --client-protocol is set to 'http1'. The default value 0 indicates no limit on TCP connections (limited by the machine specifications) (default: 0)
+   --max-idle-conns-per-host value                       The number of maximum idle connections allowed per server. (default: 100)
+   --enable-nonexistent-type-cache                       Once set, if an inode is not found in GCS, a type cache entry with type NonexistentType will be created. This also means new file/dir created might not be seen. For example, if this flag is set, and metadata-cache:ttl-secs (in config-file) or flag type-cache-ttl are set, then if we create the same file/node in the meantime using the same mount, since we are not refreshing the cache, it will still return nil.
+   --stackdriver-export-interval value                   Export metrics to stackdriver with this interval. The default value 0 indicates no exporting. (default: 0s)
+   --experimental-opentelemetry-collector-address value  Experimental: Export metrics to the OpenTelemetry collector at this address.
+   --log-file value                                      The file for storing logs that can be parsed by fluentd. When not provided, plain text logs are printed to stdout.
+   --log-format value                                    The format of the log file: 'text' or 'json'. (default: "json")
+   --experimental-enable-json-read                       By default, GCSFuse uses the GCS XML API to get and read objects. When this flag is specified, GCSFuse uses the GCS JSON API instead.
+   --debug_fuse_errors                                   If false, fuse errors will not be logged to the console (in case of --foreground) or the log-file (if specified)
+   --debug_fuse                                          Enable fuse-related debugging output.
+   --debug_fs                                            This flag is currently unused.
+   --debug_gcs                                           Print GCS request and timing information.
+   --debug_http                                          This flag is currently unused.
+   --debug_invariants                                    Panic when internal invariants are violated.
+   --debug_mutex                                         Print debug messages when a mutex is held too long.
+   --experimental-metadata-prefetch-on-mount value       Experimental: This indicates whether or not to prefetch the metadata (prefilling of metadata caches and creation of inodes) of the mounted bucket at the time of mounting the bucket. Supported values: "disabled", "sync" and "async". Any other values will return error on mounting. This is applicable only to static mounting, and not to dynamic mounting. (default: "disabled")
+   --akeso_strategy value                                The Akeso encryption strategy to use. (default: "statickey")
+   --akeso_dir value                                     The Akeso direcotry for storing keying material.
+   --akeso_pubsub value                                  The Akeso pubsub channel.
+   --help, -h                                            show help
+   --version, -v                                         print the version
+   
