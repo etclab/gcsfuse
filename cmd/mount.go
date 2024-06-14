@@ -106,6 +106,13 @@ be interacting with the file system.`)
 	}
 	bm := gcsx.NewBucketManager(bucketCfg, storageHandle)
 
+	// Start listening on pubsub subscription for key updates
+	err = akeso.StartSubscriptionPullLoop(akesoConfig)
+	if err != nil {
+		err = fmt.Errorf("StartSubscriptionPullLoop: %w", err)
+		return
+	}
+
 	// Create a file system server.
 	serverCfg := &fs.ServerConfig{
 		CacheClock:                 timeutil.RealClock(),

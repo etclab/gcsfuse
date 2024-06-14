@@ -58,9 +58,9 @@ func MetadataDataNonce(metadata map[string]string) ([]byte, error) {
 		return nil, NewMetadataDecodeError(key, err)
 	}
 
-    if len(nonce) != aes256.NonceSize {
-        return nil, NewMetadataDecodeError(key, aes256.NonceSizeError(len(nonce)))
-    }
+	if len(nonce) != aes256.NonceSize {
+		return nil, NewMetadataDecodeError(key, aes256.NonceSizeError(len(nonce)))
+	}
 
 	return nonce, nil
 }
@@ -91,9 +91,9 @@ func MetadataDataTag(metadata map[string]string) ([]byte, error) {
 		return nil, NewMetadataDecodeError(key, err)
 	}
 
-    if len(tag) != aes256.TagSize {
-        return nil, NewMetadataDecodeError(key, aes256.TagSizeError(len(tag)))
-    }
+	if len(tag) != aes256.TagSize {
+		return nil, NewMetadataDecodeError(key, aes256.TagSizeError(len(tag)))
+	}
 
 	return tag, nil
 }

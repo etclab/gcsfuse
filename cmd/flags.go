@@ -401,9 +401,21 @@ func newApp() (app *cli.App) {
 			},
 
 			cli.StringFlag{
-				Name:  "akeso_pubsub",
+				Name:  "akeso_project",
 				Value: "",
-				Usage: "The Akeso pubsub channel.",
+				Usage: "The cloud project id.",
+			},
+
+			cli.StringFlag{
+				Name:  "akeso_sub",
+				Value: "",
+				Usage: "The Akeso pubsub subscription id.",
+			},
+
+			cli.StringFlag{
+				Name:  "akeso_topic",
+				Value: "",
+				Usage: "The Akeso pubsub topic id.",
 			},
 		},
 	}
@@ -481,8 +493,10 @@ type flagStorage struct {
 
 	// Aekso
 	AkesoStrategy string
-	AkesoPubSub   string
 	AkesoDir      string
+	AkesoProject  string
+	AkesoTopic    string
+	AkesoSub      string
 }
 
 func resolveFilePath(filePath string, configKey string) (resolvedPath string, err error) {
@@ -635,8 +649,10 @@ func populateFlags(c *cli.Context) (flags *flagStorage, err error) {
 
 		// Akeso
 		AkesoStrategy: c.String("akeso_strategy"),
-		AkesoPubSub:   c.String("akeso_pubsub"),
 		AkesoDir:      c.String("akeso_dir"),
+		AkesoProject:  c.String("akeso_project"),
+		AkesoTopic:    c.String("akeso_topic"),
+		AkesoSub:      c.String("akeso_sub"),
 	}
 
 	// Handle the repeated "-o" flag.

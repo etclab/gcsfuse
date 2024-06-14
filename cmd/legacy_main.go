@@ -166,10 +166,12 @@ func mountWithArgs(
 		return
 	}
 	akesoConfig := &akeso.Config{
-		AkesoDir: flags.AkesoDir,
-		Strategy: flags.AkesoStrategy,
-		PubSub:   flags.AkesoPubSub,
-		Key:      key,
+		Strategy:  flags.AkesoStrategy,
+		AkesoDir:  flags.AkesoDir,
+		ProjectID: flags.AkesoProject,
+		SubID:     flags.AkesoSub,
+		TopicID:   flags.AkesoTopic,
+		Key:       key,
 	}
 
 	// Mount the file system.

@@ -5,6 +5,8 @@ files="cmd/flags.go
 cmd/legacy_main.go
 cmd/mount.go
 internal/akeso/config.go
+internal/akeso/metadata.go
+internal/akeso/pubsub.go
 internal/cache/file/cache_handle.go
 internal/cache/file/downloader/downloader.go
 internal/cache/file/downloader/job.go

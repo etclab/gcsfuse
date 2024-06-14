@@ -5,13 +5,15 @@ import (
 )
 
 type Config struct {
-	AkesoDir string
-	Strategy string
-	PubSub   string
-
-	Key []byte
+	Strategy  string
+	AkesoDir  string
+	ProjectID string
+	TopicID   string
+	SubID     string
+	Key       []byte
 }
 
 func (c *Config) String() string {
-	return fmt.Sprintf("AkesoConfig{AkesoDir: %q, Strategy: %q, PubSub: %q}", c.AkesoDir, c.Strategy, c.PubSub)
+	return fmt.Sprintf("AkesoConfig{Strategy: %q, AkesoDir: %q, ProjectId: %q, TopicID: %q, SubID: %q}",
+		c.Strategy, c.AkesoDir, c.ProjectID, c.TopicID, c.SubID)
 }
