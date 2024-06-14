@@ -217,13 +217,6 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 		obj = obj.If(preconditions)
 	}
 
-	// Creating a NewWriter with requested attributes, using Go Storage Client.
-	// Chuck size for resumable upload is default i.e. 16MB.
-	wc := obj.NewWriter(ctx)
-	wc = storageutil.SetAttrsInWriter(wc, req)
-	wc.ProgressFunc = func(bytesUploadedSoFar int64) {
-		logger.Tracef("gcs: Req %#16x: -- CreateObject(%q): %20v bytes uploaded so far", ctx.Value(gcs.ReqIdField), req.Name, bytesUploadedSoFar)
-	}
 
     // SMH: here is where you'll want to encrypt
     var data []byte
@@ -242,7 +235,21 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
         mu.Panicf("hex.DecodeString(hexNonce=%q) failed", hexNonce)
     }
     data = aes256.EncryptGCM(bh.akesoConfig.Key, nonce, data, nil)
-    encReader := bytes.NewReader(data)
+    ciphertext, tag, err := aes256.SplitCiphertextTag(data)
+    if err != nil {
+        // TODO: just return an error
+        mu.Panicf("aes256.SplitCiphertextTag failed: %w", err)
+    }
+    req.Metadata["akeso_data_tag"] = hex.EncodeToString(tag)
+    encReader := bytes.NewReader(ciphertext)
+
+	// Creating a NewWriter with requested attributes, using Go Storage Client.
+	// Chuck size for resumable upload is default i.e. 16MB.
+	wc := obj.NewWriter(ctx)
+	wc = storageutil.SetAttrsInWriter(wc, req)
+	wc.ProgressFunc = func(bytesUploadedSoFar int64) {
+		logger.Tracef("gcs: Req %#16x: -- CreateObject(%q): %20v bytes uploaded so far", ctx.Value(gcs.ReqIdField), req.Name, bytesUploadedSoFar)
+	}
 
 	// Copy the contents to the writer.
 	//if _, err = io.Copy(wc, req.Contents); err != nil {
