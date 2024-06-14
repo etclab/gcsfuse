@@ -31,7 +31,7 @@ import (
 	"github.com/jacobsa/timeutil"
 	"golang.org/x/net/context"
 
-    // SMH 
+	// SMH
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/logger"
 )
 
@@ -215,7 +215,7 @@ func (f *FileInode) clobbered(ctx context.Context, forceFetchFromGcs bool, inclu
 
 // Open a reader for the generation of object we care about.
 func (f *FileInode) openReader(ctx context.Context) (io.ReadCloser, error) {
-    logger.Debugf("%s:(f *FileInode) openReader(Name=%s, ReadCompressed=%T)", SMH_PREFIX, f.src.Name, f.src.HasContentEncodingGzip(), SMH_PREFIX)
+	logger.Debugf("%s:(f *FileInode) openReader(Name=%s, ReadCompressed=%T)", SMH_PREFIX, f.src.Name, f.src.HasContentEncodingGzip(), SMH_PREFIX)
 	rc, err := f.bucket.NewReader(
 		ctx,
 		&gcs.ReadObjectRequest{
@@ -233,9 +233,9 @@ func (f *FileInode) openReader(ctx context.Context) (io.ReadCloser, error) {
 //
 // LOCKS_REQUIRED(f.mu)
 func (f *FileInode) ensureContent(ctx context.Context) (err error) {
-    logger.Debugf("%s:(f *FileInode) ensureContent()", SMH_PREFIX)
+	logger.Debugf("%s:(f *FileInode) ensureContent()", SMH_PREFIX)
 	if f.localFileCache {
-        logger.Debugf("%s:(f *FileInode) ensureContent() f.localFileCache = true", SMH_PREFIX)
+		logger.Debugf("%s:(f *FileInode) ensureContent() f.localFileCache = true", SMH_PREFIX)
 		// Fetch content from the cache after validating generation numbers again
 		// Generation validation first occurs at inode creation/destruction
 		cacheObjectKey := &contentcache.CacheObjectKey{BucketName: f.bucket.Name(), ObjectName: f.name.objectName}
@@ -262,7 +262,7 @@ func (f *FileInode) ensureContent(ctx context.Context) (err error) {
 		// Update state.
 		f.content = tf.CacheFile
 	} else {
-        logger.Debugf("%s:(f *FileInode) ensureContent() f.localFileCache = false", SMH_PREFIX)
+		logger.Debugf("%s:(f *FileInode) ensureContent() f.localFileCache = false", SMH_PREFIX)
 		// Local filecache is not enabled
 		if f.content != nil {
 			return
@@ -576,7 +576,7 @@ func (f *FileInode) SetMtime(
 func (f *FileInode) Sync(ctx context.Context) (err error) {
 	// If we have not been dirtied, there is nothing to do.
 	if f.content == nil {
-        logger.Debugf("%s content not dirtied", SMH_PREFIX)
+		logger.Debugf("%s content not dirtied", SMH_PREFIX)
 		return
 	}
 
@@ -596,12 +596,11 @@ func (f *FileInode) Sync(ctx context.Context) (err error) {
 		return
 	}
 
-    logger.Debugf("%s calling f.bucket.SyncObject", SMH_PREFIX)
+	logger.Debugf("%s calling f.bucket.SyncObject", SMH_PREFIX)
 	// Write out the contents if they are dirty.
 	// Object properties are also synced as part of content sync. Hence, passing
 	// the latest object fetched from gcs which has all the properties populated.
 	newObj, err := f.bucket.SyncObject(ctx, f.Name().GcsObjectName(), latestGcsObj, f.content)
-
 
 	// Special case: a precondition error means we were clobbered, which we treat
 	// as being unlinked. There's no reason to return an error in that case.
@@ -619,7 +618,7 @@ func (f *FileInode) Sync(ctx context.Context) (err error) {
 
 	// If we wrote out a new object, we need to update our state.
 	if newObj != nil && !f.localFileCache {
-        logger.Debugf("%s we wrote a new object and need to update our state", SMH_PREFIX)
+		logger.Debugf("%s we wrote a new object and need to update our state", SMH_PREFIX)
 		var minObj gcs.MinObject
 		minObjPtr := storageutil.ConvertObjToMinObject(newObj)
 		if minObjPtr != nil {
@@ -628,7 +627,7 @@ func (f *FileInode) Sync(ctx context.Context) (err error) {
 		f.src = minObj
 		// Convert localFile to nonLocalFile after it is synced to GCS.
 		if f.IsLocal() {
-            logger.Debugf("%s convert localFile to nonLocalFile after synced to GCS", SMH_PREFIX)
+			logger.Debugf("%s convert localFile to nonLocalFile after synced to GCS", SMH_PREFIX)
 			f.local = false
 		}
 		f.content.Destroy()
@@ -659,9 +658,9 @@ func (f *FileInode) Truncate(
 
 // Ensures cache content on read if content cache enabled
 func (f *FileInode) CacheEnsureContent(ctx context.Context) (err error) {
-    logger.Debugf("%s:(f *FileInode) CacheEnsureContent()", SMH_PREFIX)
+	logger.Debugf("%s:(f *FileInode) CacheEnsureContent()", SMH_PREFIX)
 	if f.localFileCache {
-        logger.Debugf("%s:(f *FileInode) CacheEnsureContent() f.localFileCache = true", SMH_PREFIX)
+		logger.Debugf("%s:(f *FileInode) CacheEnsureContent() f.localFileCache = true", SMH_PREFIX)
 		err = f.ensureContent(ctx)
 	}
 

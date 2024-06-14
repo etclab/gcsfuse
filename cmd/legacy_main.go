@@ -158,20 +158,19 @@ func mountWithArgs(
 		}
 	}
 
-
-    // Akeso configuration
-    var key []byte
-    key, err = aes256.ReadKeyFile(filepath.Join(flags.AkesoDir, "key"))
-    if err != nil {
-	    err = fmt.Errorf("Failed to read Akeso key: %w", err)
+	// Akeso configuration
+	var key []byte
+	key, err = aes256.ReadKeyFile(filepath.Join(flags.AkesoDir, "key"))
+	if err != nil {
+		err = fmt.Errorf("Failed to read Akeso key: %w", err)
 		return
-    }
-    akesoConfig := &akeso.Config{
-        AkesoDir: flags.AkesoDir, 
-        Strategy: flags.AkesoStrategy,
-        PubSub: flags.AkesoPubSub,
-        Key: key,
-    }
+	}
+	akesoConfig := &akeso.Config{
+		AkesoDir: flags.AkesoDir,
+		Strategy: flags.AkesoStrategy,
+		PubSub:   flags.AkesoPubSub,
+		Key:      key,
+	}
 
 	// Mount the file system.
 	logger.Infof("Creating a mount at %q\n", mountPoint)
@@ -181,7 +180,7 @@ func mountWithArgs(
 		mountPoint,
 		flags,
 		mountConfig,
-        akesoConfig,
+		akesoConfig,
 		storageHandle)
 
 	if err != nil {

@@ -41,7 +41,7 @@ func mountWithStorageHandle(
 	mountPoint string,
 	flags *flagStorage,
 	mountConfig *config.MountConfig,
-    akesoConfig *akeso.Config,
+	akesoConfig *akeso.Config,
 	storageHandle storage.StorageHandle) (mfs *fuse.MountedFileSystem, err error) {
 	// Sanity check: make sure the temporary directory exists and is writable
 	// currently. This gives a better user experience than harder to debug EIO
@@ -125,7 +125,7 @@ be interacting with the file system.`)
 		SequentialReadSizeMb:       flags.SequentialReadSizeMb,
 		EnableNonexistentTypeCache: flags.EnableNonexistentTypeCache,
 		MountConfig:                mountConfig,
-        AkesoConfig:                akesoConfig,
+		AkesoConfig:                akesoConfig,
 	}
 
 	logger.Infof("Creating a new server...\n")

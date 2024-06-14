@@ -16,7 +16,6 @@ package downloader
 
 import (
 	"container/list"
-    "encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -94,8 +93,8 @@ type Job struct {
 	// specifies whether the crc check needs to be done after the file is downloaded to cache.
 	enableCrcCheck bool
 
-    // Akeso configuration
-    akesoConfig *akeso.Config
+	// Akeso configuration
+	akesoConfig *akeso.Config
 }
 
 // JobStatus represents the status of job.
@@ -123,7 +122,7 @@ func NewJob(object *gcs.MinObject, bucket gcs.Bucket, fileInfoCache *lru.Cache,
 		fileSpec:             fileSpec,
 		removeJobCallback:    removeJobCallback,
 		enableCrcCheck:       enableCrcCheck,
-        akesoConfig:          akesoConfig,
+		akesoConfig:          akesoConfig,
 	}
 	job.mu = locker.New("Job-"+fileSpec.Path, job.checkInvariants)
 	job.init()
@@ -217,7 +216,7 @@ func (job *Job) subscribe(subscribedOffset int64) (notificationC <-chan JobStatu
 //
 // Not concurrency safe and requires LOCK(job.mu)
 func (job *Job) notifySubscribers() {
-    logger.Debugf("%s:notifySubcribers()", SMH_PREFIX)
+	logger.Debugf("%s:notifySubcribers()", SMH_PREFIX)
 	var nextSubItr *list.Element
 	for subItr := job.subscribers.Front(); subItr != nil; subItr = nextSubItr {
 		subItrValue := subItr.Value.(jobSubscriber)
@@ -302,12 +301,12 @@ func (job *Job) downloadObjectAsync() {
 		return
 	}
 	defer func() {
-        logger.Debugf("%s:(job *Job) downloadFileAsync() - defer: job.status.Name: %s", SMH_PREFIX, job.status.Name)
+		logger.Debugf("%s:(job *Job) downloadFileAsync() - defer: job.status.Name: %s", SMH_PREFIX, job.status.Name)
 		err = cacheFile.Close()
 		if err != nil {
 			err = fmt.Errorf("downloadObjectAsync: error while closing cache file: %w", err)
 			job.failWhileDownloading(err)
-            return
+			return
 		}
 	}()
 
@@ -331,7 +330,7 @@ func (job *Job) downloadObjectAsync() {
 			if start < end {
 				if newReader == nil {
 					newReaderLimit = min(start+sequentialReadSize, end)
-                    logger.Debugf("%s:(job *Job) downloadFileAsync() - calling job.bucket.NewReader", SMH_PREFIX)
+					logger.Debugf("%s:(job *Job) downloadFileAsync() - calling job.bucket.NewReader", SMH_PREFIX)
 					newReader, err = job.bucket.NewReader(
 						job.cancelCtx,
 						&gcs.ReadObjectRequest{
@@ -366,7 +365,7 @@ func (job *Job) downloadObjectAsync() {
 				}
 
 				// Copy the contents from NewReader to cache file.
-                logger.Debugf("%s:(job *Job) downloadFileAsync() job.fileSpec=%v, maxRead=%d", SMH_PREFIX, job.fileSpec, maxRead)
+				logger.Debugf("%s:(job *Job) downloadFileAsync() job.fileSpec=%v, maxRead=%d", SMH_PREFIX, job.fileSpec, maxRead)
 				_, readErr := io.CopyN(cacheFile, newReader, maxRead)
 				if readErr != nil {
 					// Context is canceled when job.cancel is called at the time of
@@ -393,8 +392,8 @@ func (job *Job) downloadObjectAsync() {
 				err = job.updateFileInfoCache()
 				// Notify subscribers if file cache is updated.
 				if err == nil {
-                    //logger.Debugf("%s:(job *Job) downloadFileAsync(): notifySubscribers()", SMH_PREFIX)
-                    // SMH commented out: job.notifySubscribers()
+					//logger.Debugf("%s:(job *Job) downloadFileAsync(): notifySubscribers()", SMH_PREFIX)
+					// SMH commented out: job.notifySubscribers()
 				} else if strings.Contains(err.Error(), lru.EntryNotExistErrMsg) {
 					// Download job expects entry in file info cache for the file it is
 					// downloading. If the entry is deleted in between which is expected
@@ -413,67 +412,49 @@ func (job *Job) downloadObjectAsync() {
 					return
 				}
 			} else {
-                // (start decrypt)
-                hexNonce, ok := job.object.Metadata["akeso_data_nonce"]
-                if !ok {
-                    err = fmt.Errorf("downloadObjectAsync: object does not have akeso_data_nonce metadata")
-                    job.failWhileDownloading(err)
-                    return
-                }
+				// (start decrypt)
+				nonce, err := akeso.MetadataDataNonce(job.object.Metadata)
+				if err != nil {
+					err = fmt.Errorf("downloadObjectAsync: %w", err)
+					job.failWhileDownloading(err)
+					return
+				}
 
-                logger.Debugf("%s:(job *Job) downloadFileAsync(): hexNonce: %s", SMH_PREFIX, hexNonce)
+				tag, err := akeso.MetadataDataTag(job.object.Metadata)
+				if err != nil {
+					err = fmt.Errorf("downloadObjectAsync: %w", err)
+					job.failWhileDownloading(err)
+					return
+				}
 
-                nonce, err := hex.DecodeString(hexNonce)
-                if err != nil {
-                    err = fmt.Errorf("downloadObjectAsync: object's akeso_data_nonce metadata is malformed")
-                    job.failWhileDownloading(err)
-                    return
-                }
+				logger.Debugf("%s:(job *Job) downloadFileAsync(): reading ciphertext", SMH_PREFIX)
 
-                hexTag, ok := job.object.Metadata["akeso_data_tag"]
-                if !ok {
-                    err = fmt.Errorf("downloadObjectAsync: object does not have akeso_data_tag metadata")
-                    job.failWhileDownloading(err)
-                    return
-                }
+				data, err := os.ReadFile(job.fileSpec.Path)
+				if err != nil {
+					err = fmt.Errorf("downloadObjectAsync: error while reading cache file for decryption: %w", err)
+					job.failWhileDownloading(err)
+					return
+				}
 
-                logger.Debugf("%s:(job *Job) downloadFileAsync(): hexTag: %s", SMH_PREFIX, hexTag)
+				logger.Debugf("%s:(job *Job) downloadFileAsync(): decrypting", SMH_PREFIX)
 
-                tag, err := hex.DecodeString(hexTag)
-                if err != nil {
-                    err = fmt.Errorf("downloadObjectAsync: object's akeso_data_tag metadata is malformed")
-                    job.failWhileDownloading(err)
-                    return
-                }
+				data = append(data, tag...)
+				data, err = aes256.DecryptGCM(job.akesoConfig.Key, nonce, data, nil)
+				if err != nil {
+					err = fmt.Errorf("downloadObjectAsync: error while decrypting cache file: %w", err)
+					job.failWhileDownloading(err)
+					return
+				}
 
-                logger.Debugf("%s:(job *Job) downloadFileAsync(): reading ciphertext", SMH_PREFIX)
+				logger.Debugf("%s:(job *Job) downloadFileAsync(): writing plaintext: %s...", SMH_PREFIX, string(data)[:8])
 
-                data, err := os.ReadFile(job.fileSpec.Path)
-                if err != nil {
-                    err = fmt.Errorf("downloadObjectAsync: error while reading cache file for decryption: %w", err)
-                    job.failWhileDownloading(err)
-                    return
-                }
-
-                logger.Debugf("%s:(job *Job) downloadFileAsync(): decrypting", SMH_PREFIX)
-
-                data = append(data, tag...)
-                data, err = aes256.DecryptGCM(job.akesoConfig.Key, nonce, data, nil)
-                if err != nil {
-                    err = fmt.Errorf("downloadObjectAsync: error while decrypting cache file: %w", err)
-                    job.failWhileDownloading(err)
-                    return
-                }
-
-                logger.Debugf("%s:(job *Job) downloadFileAsync(): writing plaintext: %s...", SMH_PREFIX, string(data)[:8])
-
-                err = os.WriteFile(job.fileSpec.Path, data, job.fileSpec.FilePerm)
-                if err != nil {
-                    err = fmt.Errorf("downloadObjectAsync: error while writing decrypted cache file: %w", err)
-                    job.failWhileDownloading(err)
-                    return
-                }
-                // (end decrypt)
+				err = os.WriteFile(job.fileSpec.Path, data, job.fileSpec.FilePerm)
+				if err != nil {
+					err = fmt.Errorf("downloadObjectAsync: error while writing decrypted cache file: %w", err)
+					job.failWhileDownloading(err)
+					return
+				}
+				// (end decrypt)
 
 				job.mu.Lock()
 				job.status.Name = Completed

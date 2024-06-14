@@ -34,7 +34,7 @@ import (
 	_ "google.golang.org/grpc/balancer/rls"
 	_ "google.golang.org/grpc/xds/googledirectpath"
 
-    // SMH
+	// SMH
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 )
 
@@ -212,8 +212,8 @@ func (sh *storageClient) BucketHandle(bucketName string, billingProject string, 
 		bucket:        storageBucketHandle,
 		bucketName:    bucketName,
 		controlClient: sh.storageControlClient,
-        // SMH
-        akesoConfig:   akesoConfig,
+		// SMH
+		akesoConfig: akesoConfig,
 	}
 	return
 }

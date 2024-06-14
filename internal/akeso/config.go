@@ -1,17 +1,17 @@
 package akeso
 
 import (
-    "fmt"
+	"fmt"
 )
 
 type Config struct {
-    AkesoDir    string
-    Strategy    string
-    PubSub      string
+	AkesoDir string
+	Strategy string
+	PubSub   string
 
-    Key         []byte
+	Key []byte
 }
 
 func (c *Config) String() string {
-    return fmt.Sprintf("AkesoConfig{AkesoDir: %q, Strategy: %q, PubSub: %q}", c.AkesoDir, c.Strategy, c.PubSub)
+	return fmt.Sprintf("AkesoConfig{AkesoDir: %q, Strategy: %q, PubSub: %q}", c.AkesoDir, c.Strategy, c.PubSub)
 }

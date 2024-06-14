@@ -60,8 +60,8 @@ type JobManager struct {
 	// Specifies whether Crc check needs to be done.
 	enableCrcCheck bool
 
-    // Akeso configuration
-    akesoConfig *akeso.Config
+	// Akeso configuration
+	akesoConfig *akeso.Config
 }
 
 func NewJobManager(fileInfoCache *lru.Cache, filePerm os.FileMode, dirPerm os.FileMode, cacheDir string, sequentialReadSizeMb int32, enableCrcCheck bool, akesoConfig *akeso.Config) (jm *JobManager) {

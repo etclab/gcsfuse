@@ -32,7 +32,7 @@ import (
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/util"
 	"github.com/jacobsa/timeutil"
 
-    // smh
+	// smh
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 )
 
@@ -71,7 +71,7 @@ type BucketManager interface {
 	SetUpBucket(
 		ctx context.Context,
 		name string, isMultibucketMount bool,
-        akesoConfig *akeso.Config) (b SyncerBucket, err error)
+		akesoConfig *akeso.Config) (b SyncerBucket, err error)
 
 	// Shuts down the bucket manager and its buckets
 	ShutDown()
@@ -160,7 +160,7 @@ func (bm *bucketManager) SetUpBucket(
 	ctx context.Context,
 	name string,
 	isMultibucketMount bool,
-    akesoConfig *akeso.Config,
+	akesoConfig *akeso.Config,
 ) (sb SyncerBucket, err error) {
 	var b gcs.Bucket
 	// Set up the appropriate backing bucket.

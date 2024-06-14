@@ -388,23 +388,23 @@ func newApp() (app *cli.App) {
 			// Akeso
 			/////////////////////////
 
-            cli.StringFlag{
-                Name: "akeso_strategy",
-                Value: "statickey",
-                Usage: "The Akeso encryption strategy to use.",
-            },
+			cli.StringFlag{
+				Name:  "akeso_strategy",
+				Value: "statickey",
+				Usage: "The Akeso encryption strategy to use.",
+			},
 
-            cli.StringFlag{
-                Name: "akeso_dir",
-                Value: "",
-                Usage: "The Akeso direcotry for storing keying material.",
-            },
+			cli.StringFlag{
+				Name:  "akeso_dir",
+				Value: "",
+				Usage: "The Akeso direcotry for storing keying material.",
+			},
 
-            cli.StringFlag{
-                Name: "akeso_pubsub",
-                Value: "",
-                Usage: "The Akeso pubsub channel.",
-            },
+			cli.StringFlag{
+				Name:  "akeso_pubsub",
+				Value: "",
+				Usage: "The Akeso pubsub channel.",
+			},
 		},
 	}
 
@@ -479,11 +479,10 @@ type flagStorage struct {
 	// gcsfuse command itself, which flag is targeted at.
 	ExperimentalMetadataPrefetchOnMount string
 
-
-    // Aekso
-    AkesoStrategy   string
-    AkesoPubSub     string
-    AkesoDir        string
+	// Aekso
+	AkesoStrategy string
+	AkesoPubSub   string
+	AkesoDir      string
 }
 
 func resolveFilePath(filePath string, configKey string) (resolvedPath string, err error) {
@@ -530,7 +529,7 @@ func resolvePathForTheFlagsInContext(c *cli.Context) (err error) {
 
 	err = resolvePathForTheFlagInContext("akeso_dir", c)
 	if err != nil {
-        return fmt.Errorf("resolving for akeso_dir: %w", err)
+		return fmt.Errorf("resolving for akeso_dir: %w", err)
 	}
 
 	return
@@ -634,10 +633,10 @@ func populateFlags(c *cli.Context) (flags *flagStorage, err error) {
 		// Post-mount actions
 		ExperimentalMetadataPrefetchOnMount: c.String(ExperimentalMetadataPrefetchOnMountFlag),
 
-        // Akeso
-        AkesoStrategy:  c.String("akeso_strategy"),
-        AkesoPubSub:    c.String("akeso_pubsub"),
-        AkesoDir:       c.String("akeso_dir"),
+		// Akeso
+		AkesoStrategy: c.String("akeso_strategy"),
+		AkesoPubSub:   c.String("akeso_pubsub"),
+		AkesoDir:      c.String("akeso_dir"),
 	}
 
 	// Handle the repeated "-o" flag.

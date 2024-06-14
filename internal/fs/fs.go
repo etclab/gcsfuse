@@ -46,7 +46,7 @@ import (
 	"github.com/jacobsa/fuse/fuseutil"
 	"github.com/jacobsa/timeutil"
 
-    // SMH
+	// SMH
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 )
 
@@ -131,8 +131,8 @@ type ServerConfig struct {
 	// MountConfig has all the config specified by the user using configFile flag.
 	MountConfig *config.MountConfig
 
-    // AkesoConfig has all the akeso-related configuration options
-    AkesoConfig *akeso.Config 
+	// AkesoConfig has all the akeso-related configuration options
+	AkesoConfig *akeso.Config
 }
 
 // Create a fuse file system server according to the supplied configuration.
@@ -198,7 +198,7 @@ func NewFileSystem(
 		mountConfig:                cfg.MountConfig,
 		fileCacheHandler:           fileCacheHandler,
 		cacheFileForRangeRead:      cfg.MountConfig.FileCacheConfig.CacheFileForRangeRead,
-        akesoConfig:                cfg.AkesoConfig,
+		akesoConfig:                cfg.AkesoConfig,
 	}
 
 	// Set up root bucket
@@ -300,7 +300,7 @@ func makeRootForAllBuckets(fs *fileSystem) inode.DirInode {
 			Mtime: fs.mtimeClock.Now(),
 		},
 		fs.bucketManager,
-        fs.akesoConfig,
+		fs.akesoConfig,
 	)
 }
 
@@ -478,8 +478,8 @@ type fileSystem struct {
 	// random file access.
 	cacheFileForRangeRead bool
 
-    // AkesoConfig has all the akeso-related configuration options
-    akesoConfig *akeso.Config 
+	// AkesoConfig has all the akeso-related configuration options
+	akesoConfig *akeso.Config
 }
 
 ////////////////////////////////////////////////////////////////////////
