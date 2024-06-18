@@ -97,7 +97,7 @@ func (oc *fullObjectCreator) Create(
 
 	var req *gcs.CreateObjectRequest
 	if srcObject == nil {
-		logger.Debugf("%s:fullObjectCreator.Create(%s) - srcObject is nil", objectName, SMH_PREFIX)
+		logger.Debugf("%s:fullObjectCreator.Create(%s) - srcObject is nil", SMH_PREFIX, objectName)
 
 		var precond int64
 		req = &gcs.CreateObjectRequest{
@@ -107,7 +107,7 @@ func (oc *fullObjectCreator) Create(
 			Metadata:               metadataMap,
 		}
 	} else {
-		logger.Debugf("%s:fullObjectCreator.Create(%s) - srcObject is not nil", objectName, SMH_PREFIX)
+		logger.Debugf("%s:fullObjectCreator.Create(%s) - srcObject is not nil", SMH_PREFIX, objectName)
 		for key, value := range srcObject.Metadata {
 			metadataMap[key] = value
 		}
@@ -134,7 +134,7 @@ func (oc *fullObjectCreator) Create(
 	}
 
 	if _, ok := metadataMap[akeso.DataNonce]; !ok {
-		logger.Debugf("%s:fullObjectCreate.Create(%s): srcObject does not have an akeso_data_nonce; adding one", objectName, SMH_PREFIX)
+		logger.Debugf("%s:fullObjectCreate.Create(%s): srcObject does not have an %s; adding one", SMH_PREFIX, objectName, akeso.DataNonce)
 		nonce := aes256.NewRandomNonce()
 		err = akeso.SetMetadataDataNonce(metadataMap, nonce)
 		if err != nil {
