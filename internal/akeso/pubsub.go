@@ -2,6 +2,7 @@ package akeso
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -9,10 +10,16 @@ import (
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/logger"
 )
 
-func subscriptionPullLoop(ctx context.Context, sub *pubsub.Subscription) {
+func subscriptionPullLoop(ctx context.Context, sub *pubsub.Subscription,
+	config *Config) {
 	for {
 		err := sub.Receive(ctx, func(_ context.Context, msg *pubsub.Message) {
 			logger.Infof("received pubsub message (%d bytes): %s", len(msg.Data), string(msg.Data))
+			key, err := hex.DecodeString(string(msg.Data))
+			if err != nil {
+				logger.Warnf("hex.DecodeString() failed: %v", err)
+			}
+			config.SetKey(key)
 			msg.Ack()
 		})
 		if err != nil {
@@ -30,7 +37,7 @@ func StartSubscriptionPullLoop(config *Config) error {
 	}
 
 	sub := client.Subscription(config.SubID)
-	go subscriptionPullLoop(ctx, sub)
+	go subscriptionPullLoop(ctx, sub, config)
 
 	return nil
 }
