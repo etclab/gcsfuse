@@ -446,7 +446,7 @@ func (job *Job) downloadObjectAsync() {
 					return
 				}
 
-				logger.Debugf("%s:(job *Job) downloadFileAsync(): writing plaintext: %s...", SMH_PREFIX, string(data)[:8])
+				logger.Debugf("%s:(job *Job) downloadFileAsync(): writing plaintext: %s...", SMH_PREFIX, string(data)[:min(8, len(string(data)))])
 
 				err = os.WriteFile(job.fileSpec.Path, data, job.fileSpec.FilePerm)
 				if err != nil {
