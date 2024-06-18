@@ -221,12 +221,7 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 		return
 	}
 
-	nonce, err := akeso.MetadataDataNonce(req.Metadata)
-	if err != nil {
-		err = fmt.Errorf("get metadata failed: %w", err)
-		return
-	}
-
+	nonce := aes256.NewRandomNonce()
 	data = aes256.EncryptGCM(bh.akesoConfig.Key, nonce, data, nil)
 	ciphertext, tag, err := aes256.SplitCiphertextTag(data)
 	if err != nil {
@@ -237,6 +232,11 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 	err = akeso.SetMetadataDataTag(req.Metadata, tag)
 	if err != nil {
 		err = fmt.Errorf("set metadata failed: %w", err)
+		return
+	}
+	err = akeso.SetMetadataDataNonce(req.Metadata, nonce)
+	if err != nil {
+		err = fmt.Errorf("set nonce failed: %w", err)
 		return
 	}
 
