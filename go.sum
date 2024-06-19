@@ -400,8 +400,12 @@ github.com/envoyproxy/protoc-gen-validate v1.0.4 h1:gVPz/FMfvh57HdSJQyvBtF00j8JU
 github.com/envoyproxy/protoc-gen-validate v1.0.4/go.mod h1:qys6tmnRsYrQqIhm2bvKZH4Blx/1gTIZ2UKVY1M+Yew=
 github.com/etclab/aes256 v0.1.0 h1:PyZOoc76mU2w3TTjgeYv3HVL6LFeu3o1MHQwUKEQhCE=
 github.com/etclab/aes256 v0.1.0/go.mod h1:/ZpruxjgRpfbgSJmKYazZnuBwA8EG7h80VCOkyXFqRo=
+github.com/etclab/aes256 v0.1.1 h1:HtEcHdcYDzgzCeQF/onC0YBhY/ehN2qlIL634FUAEmc=
+github.com/etclab/aes256 v0.1.1/go.mod h1:/ZpruxjgRpfbgSJmKYazZnuBwA8EG7h80VCOkyXFqRo=
 github.com/etclab/mu v0.1.0 h1:E2P6a0KOAnqv1f2dL6IQ1ibhax558T8nvWh76q3SV/8=
 github.com/etclab/mu v0.1.0/go.mod h1:Q1g67Uyx3LUHW0YioY/ipPfKTQe/8NjYlpevy4zgGyk=
+github.com/etclab/nestedaes v0.0.0-20240611135518-1bfa477e1f3d h1:kehVNCfBXjOkezj2nNBvy3X6jz3x8dAhnnbiewsCoO8=
+github.com/etclab/nestedaes v0.0.0-20240611135518-1bfa477e1f3d/go.mod h1:F3vIRjg1PJ/AEln/j6HRhuQjm58xb0+G+iHXdiWnDYQ=
 github.com/evanphx/json-patch v4.9.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.11.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.12.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=

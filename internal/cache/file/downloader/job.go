@@ -23,7 +23,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/etclab/aes256"
+	"github.com/etclab/nestedaes"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/cache/data"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/cache/lru"
@@ -413,14 +413,7 @@ func (job *Job) downloadObjectAsync() {
 				}
 			} else {
 				// (start decrypt)
-				nonce, err := akeso.MetadataDataNonce(job.object.Metadata)
-				if err != nil {
-					err = fmt.Errorf("downloadObjectAsync: %w", err)
-					job.failWhileDownloading(err)
-					return
-				}
-
-				tag, err := akeso.MetadataDataTag(job.object.Metadata)
+				header, err := akeso.MetadataNestedHeader(job.object.Metadata)
 				if err != nil {
 					err = fmt.Errorf("downloadObjectAsync: %w", err)
 					job.failWhileDownloading(err)
@@ -438,8 +431,9 @@ func (job *Job) downloadObjectAsync() {
 
 				logger.Debugf("%s:(job *Job) downloadFileAsync(): decrypting", SMH_PREFIX)
 
-				data = append(data, tag...)
-				data, err = aes256.DecryptGCM(job.akesoConfig.Key, nonce, data, nil)
+				data = append(header, data...)
+				// TODO: additonal data
+				data, err = nestedaes.Decrypt(data, job.akesoConfig.Key, nil)
 				if err != nil {
 					err = fmt.Errorf("downloadObjectAsync: error while decrypting cache file: %w", err)
 					job.failWhileDownloading(err)

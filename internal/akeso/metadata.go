@@ -3,13 +3,11 @@ package akeso
 import (
 	"encoding/hex"
 	"fmt"
-
-	"github.com/etclab/aes256"
+	//"github.com/etclab/aes256"
 )
 
 const (
-	DataNonce = "akeso_data_nonce"
-	DataTag   = "akeso_data_tag"
+	NestedHeader = "akeso_header"
 )
 
 // value is the string
@@ -45,7 +43,7 @@ func (e MetadataEncodeError) Error() string {
 	return fmt.Sprintf("akeso: can't encode metadata for key %q: %v", e.Key, e.Err)
 }
 
-func MetadataDataNonce(metadata map[string]string) ([]byte, error) {
+/*func MetadataDataNonce(metadata map[string]string) ([]byte, error) {
 	key := DataNonce
 
 	hexNonce, ok := metadata[key]
@@ -107,6 +105,36 @@ func SetMetadataDataTag(metadata map[string]string, tag []byte) error {
 
 	hexTag := hex.EncodeToString(tag)
 	metadata[key] = hexTag
+
+	return nil
+}*/
+
+func MetadataNestedHeader(metadata map[string]string) ([]byte, error) {
+	key := NestedHeader
+
+	hexHeader, ok := metadata[key]
+	if !ok {
+		return nil, MetadataNoExistError(key)
+	}
+
+	// TODO: b64?
+	header, err := hex.DecodeString(hexHeader)
+	if err != nil {
+		return nil, NewMetadataDecodeError(key, err)
+	}
+
+	// TODO: sanity check size?
+
+	return header, nil
+}
+
+func SetMetadataNestedHeader(metadata map[string]string, header []byte) error {
+	key := NestedHeader
+
+	// TODO: sanity check size?
+
+	hexHeader := hex.EncodeToString(header)
+	metadata[key] = hexHeader
 
 	return nil
 }

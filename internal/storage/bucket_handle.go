@@ -39,7 +39,9 @@ import (
 
 	// SMH
 	"bytes"
+
 	"github.com/etclab/aes256"
+	"github.com/etclab/nestedaes"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 )
 
@@ -221,22 +223,22 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 		return
 	}
 
-	nonce := aes256.NewRandomNonce()
-	data = aes256.EncryptGCM(bh.akesoConfig.Key, nonce, data, nil)
-	ciphertext, tag, err := aes256.SplitCiphertextTag(data)
+	// TODO: additionalData
+	data, err = nestedaes.Encrypt(data, bh.akesoConfig.Key, aes256.NewRandomIV(), nil)
 	if err != nil {
-		err = fmt.Errorf("aes256.SplitCiphertextTag failed: %w", err)
+		err = fmt.Errorf("encryption failed: %w", err)
 		return
 	}
 
-	err = akeso.SetMetadataDataTag(req.Metadata, tag)
+	header, ciphertext, err := nestedaes.SplitHeaderPayload(data)
 	if err != nil {
-		err = fmt.Errorf("set metadata failed: %w", err)
+		err = fmt.Errorf("nestedaes.SplitHeaderPayload failed: %w", err)
 		return
 	}
-	err = akeso.SetMetadataDataNonce(req.Metadata, nonce)
+
+	err = akeso.SetMetadataNestedHeader(req.Metadata, header)
 	if err != nil {
-		err = fmt.Errorf("set nonce failed: %w", err)
+		err = fmt.Errorf("set metadata failed: %w", err)
 		return
 	}
 
