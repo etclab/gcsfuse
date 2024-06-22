@@ -39,6 +39,7 @@ import (
 
 	// SMH
 	"bytes"
+
 	"github.com/etclab/aes256"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 )
@@ -222,7 +223,11 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 	}
 
 	nonce := aes256.NewRandomNonce()
+
+	bh.akesoConfig.KeyMutex.RLock()
 	data = aes256.EncryptGCM(bh.akesoConfig.Key, nonce, data, nil)
+	bh.akesoConfig.KeyMutex.RUnlock()
+
 	ciphertext, tag, err := aes256.SplitCiphertextTag(data)
 	if err != nil {
 		err = fmt.Errorf("aes256.SplitCiphertextTag failed: %w", err)

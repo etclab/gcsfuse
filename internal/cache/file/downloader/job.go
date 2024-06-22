@@ -439,7 +439,11 @@ func (job *Job) downloadObjectAsync() {
 				logger.Debugf("%s:(job *Job) downloadFileAsync(): decrypting", SMH_PREFIX)
 
 				data = append(data, tag...)
+
+				job.akesoConfig.KeyMutex.RLock()
 				data, err = aes256.DecryptGCM(job.akesoConfig.Key, nonce, data, nil)
+				job.akesoConfig.KeyMutex.RUnlock()
+
 				if err != nil {
 					err = fmt.Errorf("downloadObjectAsync: error while decrypting cache file: %w", err)
 					job.failWhileDownloading(err)

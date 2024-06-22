@@ -12,7 +12,7 @@ type Config struct {
 	TopicID   string
 	SubID     string
 	Key       []byte
-	mu        sync.Mutex
+	KeyMutex  sync.RWMutex
 }
 
 func (c *Config) String() string {
@@ -21,7 +21,7 @@ func (c *Config) String() string {
 }
 
 func (c *Config) SetKey(key []byte) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.KeyMutex.Lock()
+	defer c.KeyMutex.Unlock()
 	c.Key = key
 }
