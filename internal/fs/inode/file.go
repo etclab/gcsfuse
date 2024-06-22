@@ -215,7 +215,7 @@ func (f *FileInode) clobbered(ctx context.Context, forceFetchFromGcs bool, inclu
 
 // Open a reader for the generation of object we care about.
 func (f *FileInode) openReader(ctx context.Context) (io.ReadCloser, error) {
-	logger.Debugf("%s:(f *FileInode) openReader(Name=%s, ReadCompressed=%T)", SMH_PREFIX, f.src.Name, f.src.HasContentEncodingGzip(), SMH_PREFIX)
+	logger.Debugf("%s:(f *FileInode) openReader(Name=%s, ReadCompressed=%T)", SMH_PREFIX, f.src.Name, f.src.HasContentEncodingGzip())
 	rc, err := f.bucket.NewReader(
 		ctx,
 		&gcs.ReadObjectRequest{
