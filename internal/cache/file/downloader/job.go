@@ -432,8 +432,12 @@ func (job *Job) downloadObjectAsync() {
 				logger.Debugf("%s:(job *Job) downloadFileAsync(): decrypting", SMH_PREFIX)
 
 				data = append(header, data...)
+
+				job.akesoConfig.KeyMutex.RLock()
 				// TODO: additonal data
 				data, err = nestedaes.Decrypt(data, job.akesoConfig.Key, nil)
+				job.akesoConfig.KeyMutex.RUnlock()
+
 				if err != nil {
 					err = fmt.Errorf("downloadObjectAsync: error while decrypting cache file: %w", err)
 					job.failWhileDownloading(err)

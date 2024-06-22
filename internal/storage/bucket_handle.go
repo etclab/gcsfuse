@@ -223,8 +223,11 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 		return
 	}
 
+	bh.akesoConfig.KeyMutex.RLock()
 	// TODO: additionalData
 	data, err = nestedaes.Encrypt(data, bh.akesoConfig.Key, aes256.NewRandomIV(), nil)
+	bh.akesoConfig.KeyMutex.RUnlock()
+
 	if err != nil {
 		err = fmt.Errorf("encryption failed: %w", err)
 		return
