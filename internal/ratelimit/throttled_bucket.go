@@ -17,6 +17,7 @@ package ratelimit
 import (
 	"io"
 
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/gcs"
 	"golang.org/x/net/context"
 )
@@ -52,6 +53,10 @@ func (b *throttledBucket) Name() string {
 
 func (b *throttledBucket) BucketType() gcs.BucketType {
 	return b.wrapped.BucketType()
+}
+
+func (b *throttledBucket) AkesoConfig() *akeso.Config {
+	return b.wrapped.AkesoConfig()
 }
 
 func (b *throttledBucket) NewReader(

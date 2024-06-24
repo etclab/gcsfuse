@@ -17,6 +17,7 @@ package gcs
 import (
 	"io"
 
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"golang.org/x/net/context"
 )
 
@@ -56,6 +57,9 @@ type Bucket interface {
 
 	// Return Type of bucket e.g. Hierarchical or NonHierarchical
 	BucketType() BucketType
+
+	// Return Akeso config
+	AkesoConfig() *akeso.Config
 
 	// Create a reader for the contents of a particular generation of an object.
 	// On a nil error, the caller must arrange for the reader to be closed when

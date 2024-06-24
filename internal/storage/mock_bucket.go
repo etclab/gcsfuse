@@ -12,6 +12,7 @@ import (
 	runtime "runtime"
 	unsafe "unsafe"
 
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/gcs"
 	oglemock "github.com/jacobsa/oglemock"
 	context "golang.org/x/net/context"
@@ -203,6 +204,31 @@ func (m *mockBucket) Name() (o0 string) {
 	// o0 string
 	if retVals[0] != nil {
 		o0 = retVals[0].(string)
+	}
+
+	return
+}
+
+// TODO: did this break a test? how does oglemock work?
+func (m *mockBucket) AkesoConfig() (o0 *akeso.Config) {
+	// Get a file name and line number for the caller.
+	_, file, line, _ := runtime.Caller(1)
+
+	// Hand the call off to the controller, which does most of the work.
+	retVals := m.controller.HandleMethodCall(
+		m,
+		"AkesoConfig",
+		file,
+		line,
+		[]interface{}{})
+
+	if len(retVals) != 1 {
+		panic(fmt.Sprintf("mockBucket.Name: invalid return values: %v", retVals))
+	}
+
+	// o0 string
+	if retVals[0] != nil {
+		o0 = retVals[0].(*akeso.Config)
 	}
 
 	return

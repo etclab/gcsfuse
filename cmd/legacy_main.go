@@ -159,6 +159,10 @@ func mountWithArgs(
 	}
 
 	// Akeso configuration
+	if flags.AkesoStrategy != akeso.Strategy {
+		err = fmt.Errorf("Akeso strategy not implemented: %s", flags.AkesoStrategy)
+		return
+	}
 	var key []byte
 	key, err = aes256.ReadKeyFile(filepath.Join(flags.AkesoDir, "key"))
 	if err != nil {

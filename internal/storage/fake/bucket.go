@@ -27,6 +27,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/gcs"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/storageutil"
 	"github.com/jacobsa/syncutil"
@@ -36,8 +37,8 @@ import (
 var crc32cTable = crc32.MakeTable(crc32.Castagnoli)
 
 // Equivalent to NewConn(clock).GetBucket(name).
-func NewFakeBucket(clock timeutil.Clock, name string) gcs.Bucket {
-	b := &bucket{clock: clock, name: name}
+func NewFakeBucket(clock timeutil.Clock, name string, akesoConfig *akeso.Config) gcs.Bucket {
+	b := &bucket{clock: clock, name: name, akesoConfig: akesoConfig}
 	b.mu = syncutil.NewInvariantMutex(b.checkInvariants)
 	return b
 }
@@ -139,6 +140,8 @@ type bucket struct {
 	//
 	// INVARIANT: This is an upper bound for generation numbers in objects.
 	prevGeneration int64 // GUARDED_BY(mu)
+
+	akesoConfig *akeso.Config
 }
 
 func checkName(name string) (err error) {
@@ -438,6 +441,10 @@ func (b *bucket) Name() string {
 
 func (b *bucket) BucketType() gcs.BucketType {
 	return b.bucketType
+}
+
+func (b *bucket) AkesoConfig() *akeso.Config {
+	return b.akesoConfig
 }
 
 // LOCKS_EXCLUDED(b.mu)

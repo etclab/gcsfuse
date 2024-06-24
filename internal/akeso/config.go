@@ -4,6 +4,9 @@ import (
 	"fmt"
 )
 
+// TODO: dynamic strategy based on passed config
+const Strategy = "statickey"
+
 type Config struct {
 	AkesoDir string
 	Strategy string
