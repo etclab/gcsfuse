@@ -20,7 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/cache/metadata"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/gcs"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/storageutil"
@@ -127,8 +126,8 @@ func (b *fastStatBucket) BucketType() gcs.BucketType {
 	return b.wrapped.BucketType()
 }
 
-func (b *fastStatBucket) AkesoConfig() *akeso.Config {
-	return b.wrapped.AkesoConfig()
+func (b *fastStatBucket) AkesoStrategy() string {
+	return b.wrapped.AkesoStrategy()
 }
 
 func (b *fastStatBucket) NewReader(

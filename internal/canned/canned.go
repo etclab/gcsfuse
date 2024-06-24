@@ -58,7 +58,7 @@ const (
 // Create a fake bucket with canned contents as described in the comments for
 // FakeBucketName.
 func MakeFakeBucket(ctx context.Context, akesoConfig *akeso.Config) (b gcs.Bucket) {
-	b = fake.NewFakeBucket(timeutil.RealClock(), FakeBucketName, akesoConfig)
+	b = fake.NewFakeBucket(timeutil.RealClock(), FakeBucketName, akesoConfig.Strategy)
 
 	// Set up contents.
 	contents := map[string]string{

@@ -20,7 +20,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/logger"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/monitor/tags"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/gcs"
@@ -119,8 +118,8 @@ func (mb *monitoringBucket) BucketType() gcs.BucketType {
 	return mb.wrapped.BucketType()
 }
 
-func (mb *monitoringBucket) AkesoConfig() *akeso.Config {
-	return mb.wrapped.AkesoConfig()
+func (mb *monitoringBucket) AkesoStrategy() string {
+	return mb.wrapped.AkesoStrategy()
 }
 
 func (mb *monitoringBucket) NewReader(

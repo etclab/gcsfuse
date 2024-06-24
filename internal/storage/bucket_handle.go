@@ -92,8 +92,8 @@ func (bh *bucketHandle) BucketType() gcs.BucketType {
 	return bh.bucketType
 }
 
-func (bh *bucketHandle) AkesoConfig() *akeso.Config {
-	return bh.akesoConfig
+func (bh *bucketHandle) AkesoStrategy() string {
+	return bh.akesoConfig.Strategy
 }
 
 func (bh *bucketHandle) NewReader(

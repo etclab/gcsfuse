@@ -145,7 +145,7 @@ func (oc *fullObjectCreator) Create(
 
 	if _, ok := metadataMap[akeso.StrategyKey]; !ok {
 		logger.Debugf("%s:fullObjectCreate.Create(%s): srcObject does not have an %s; adding one", SMH_PREFIX, objectName, akeso.StrategyKey)
-		metadataMap[akeso.StrategyKey] = oc.bucket.AkesoConfig().Strategy
+		metadataMap[akeso.StrategyKey] = oc.bucket.AkesoStrategy()
 	}
 
 	o, err = oc.bucket.CreateObject(ctx, req)

@@ -20,7 +20,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/logger"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/gcs"
 	"golang.org/x/net/context"
@@ -130,8 +129,8 @@ func (b *debugBucket) BucketType() gcs.BucketType {
 	return b.wrapped.BucketType()
 }
 
-func (b *debugBucket) AkesoConfig() *akeso.Config {
-	return b.wrapped.AkesoConfig()
+func (b *debugBucket) AkesoStrategy() string {
+	return b.wrapped.AkesoStrategy()
 }
 
 func (b *debugBucket) NewReader(

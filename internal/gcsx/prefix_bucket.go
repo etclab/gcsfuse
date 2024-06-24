@@ -20,7 +20,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/gcs"
 	"golang.org/x/net/context"
 )
@@ -68,8 +67,8 @@ func (b *prefixBucket) BucketType() gcs.BucketType {
 	return b.wrapped.BucketType()
 }
 
-func (b *prefixBucket) AkesoConfig() *akeso.Config {
-	return b.wrapped.AkesoConfig()
+func (b *prefixBucket) AkesoStrategy() string {
+	return b.wrapped.AkesoStrategy()
 }
 
 func (b *prefixBucket) NewReader(
