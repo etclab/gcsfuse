@@ -93,6 +93,10 @@ func (bh *bucketHandle) BucketType() gcs.BucketType {
 	return bh.bucketType
 }
 
+func (bh *bucketHandle) AkesoStrategy() string {
+	return bh.akesoConfig.Strategy
+}
+
 func (bh *bucketHandle) NewReader(
 	ctx context.Context,
 	req *gcs.ReadObjectRequest) (io.ReadCloser, error) {
@@ -234,6 +238,7 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 		return
 	}
 
+	req.Metadata[akeso.StrategyKey] = bh.akesoConfig.Strategy
 	err = akeso.SetMetadataDataTag(req.Metadata, tag)
 	if err != nil {
 		err = fmt.Errorf("set metadata failed: %w", err)

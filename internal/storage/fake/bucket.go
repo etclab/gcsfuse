@@ -36,8 +36,8 @@ import (
 var crc32cTable = crc32.MakeTable(crc32.Castagnoli)
 
 // Equivalent to NewConn(clock).GetBucket(name).
-func NewFakeBucket(clock timeutil.Clock, name string) gcs.Bucket {
-	b := &bucket{clock: clock, name: name}
+func NewFakeBucket(clock timeutil.Clock, name string, akesoStrategy string) gcs.Bucket {
+	b := &bucket{clock: clock, name: name, akesoStrategy: akesoStrategy}
 	b.mu = syncutil.NewInvariantMutex(b.checkInvariants)
 	return b
 }
@@ -139,6 +139,8 @@ type bucket struct {
 	//
 	// INVARIANT: This is an upper bound for generation numbers in objects.
 	prevGeneration int64 // GUARDED_BY(mu)
+
+	akesoStrategy string
 }
 
 func checkName(name string) (err error) {
@@ -438,6 +440,10 @@ func (b *bucket) Name() string {
 
 func (b *bucket) BucketType() gcs.BucketType {
 	return b.bucketType
+}
+
+func (b *bucket) AkesoStrategy() string {
+	return b.akesoStrategy
 }
 
 // LOCKS_EXCLUDED(b.mu)

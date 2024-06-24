@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	DataNonce = "akeso_data_nonce"
-	DataTag   = "akeso_data_tag"
+	StrategyKey = "akeso_strategy"
+	DataNonce   = "akeso_data_nonce"
+	DataTag     = "akeso_data_tag"
 )
 
 // value is the string

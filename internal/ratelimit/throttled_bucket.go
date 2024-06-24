@@ -54,6 +54,10 @@ func (b *throttledBucket) BucketType() gcs.BucketType {
 	return b.wrapped.BucketType()
 }
 
+func (b *throttledBucket) AkesoStrategy() string {
+	return b.wrapped.AkesoStrategy()
+}
+
 func (b *throttledBucket) NewReader(
 	ctx context.Context,
 	req *gcs.ReadObjectRequest) (rc io.ReadCloser, err error) {

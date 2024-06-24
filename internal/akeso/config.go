@@ -8,6 +8,9 @@ import (
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/logger"
 )
 
+// TODO: dynamic strategy based on passed config
+const Strategy = "strawman"
+
 type Config struct {
 	Strategy  string
 	AkesoDir  string
