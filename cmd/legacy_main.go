@@ -165,6 +165,7 @@ func mountWithArgs(
 		err = fmt.Errorf("Failed to read Akeso key: %w", err)
 		return
 	}
+	artConfig := akeso.DefaultArtConfig(flags.AkesoDir)
 	akesoConfig := &akeso.Config{
 		Strategy:  flags.AkesoStrategy,
 		AkesoDir:  flags.AkesoDir,
@@ -172,6 +173,7 @@ func mountWithArgs(
 		SubID:     flags.AkesoSub,
 		TopicID:   flags.AkesoTopic,
 		Key:       key,
+		ArtConfig: *artConfig,
 	}
 
 	// Mount the file system.
