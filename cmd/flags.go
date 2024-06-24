@@ -388,6 +388,12 @@ func newApp() (app *cli.App) {
 			// Akeso
 			/////////////////////////
 
+			// cli.StringFlag{
+			// 	Name:  "akeso-config",
+			// 	Value: "",
+			// 	Usage: "The path to the Akeso config file",
+			// },
+
 			cli.StringFlag{
 				Name:  "akeso_strategy",
 				Value: "statickey",
