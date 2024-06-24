@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/pubsub v1.38.0
 	cloud.google.com/go/storage v1.41.0
 	contrib.go.opencensus.io/exporter/ocagent v0.7.0
-	contrib.go.opencensus.io/exporter/stackdriver v0.13.12
+	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/etclab/aes256 v0.1.1
 	github.com/etclab/art v0.1.0
 	github.com/fsouza/fake-gcs-server v1.49.1
