@@ -12,8 +12,12 @@ type Config struct {
 	Strategy  string
 	AkesoDir  string
 	ProjectID string
-	TopicID   string
-	SubID     string
+	// TopicID   string 
+	SetupGroupTopicID	string
+	UpdateKeyTopicID	string
+	// SubID     string 
+	// Subscription IDs (= topic_name + member_name + "sub") to be generated and created automatically
+	MemberName string
 	Key       []byte
 	KeyMutex  sync.RWMutex
 
@@ -21,8 +25,8 @@ type Config struct {
 }
 
 func (c *Config) String() string {
-	return fmt.Sprintf("AkesoConfig{Strategy: %q, AkesoDir: %q, ProjectId: %q, TopicID: %q, SubID: %q}",
-		c.Strategy, c.AkesoDir, c.ProjectID, c.TopicID, c.SubID)
+	return fmt.Sprintf("AkesoConfig{Strategy: %q, AkesoDir: %q, ProjectId: %q, MemberName: %q, SetupGroupTopicID: %q, UpdateKeyTopicID: %q}",
+		c.Strategy, c.AkesoDir, c.ProjectID, c.MemberName, c.SetupGroupTopicID, c.UpdateKeyTopicID)
 }
 
 func (c *Config) SetKey(key []byte) {

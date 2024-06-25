@@ -1,5 +1,7 @@
 #!/bin/sh
 
+mkdir -p logs
+
 # these are files that I have modified
 files="cmd/flags.go
 cmd/legacy_main.go

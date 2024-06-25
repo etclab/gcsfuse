@@ -11,3 +11,11 @@ file-cache:
 
 metadata-cache:
     ttl-secs: -1
+
+akeso:
+    setup-channel: GroupSetup
+    update-channel: KeyUpdate
+    strategy: strawman 
+    project: ornate-flame-397517 
+    akeso_dir: smh/akeso.d 
+    member_name: bob
