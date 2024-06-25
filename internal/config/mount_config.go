@@ -131,6 +131,15 @@ type MetadataCacheConfig struct {
 	StatCacheMaxSizeMB int64 `yaml:"stat-cache-max-size-mb,omitempty"`
 }
 
+type AkesoConfig struct {
+	SetupChannel  string `yaml:"setup-channel"`
+	UpdateChannel string `yaml:"update-channel"`
+	Strategy      string `yaml:"strategy"`
+	Project       string `yaml:"project"`
+	AkesoDir      string `yaml:"akeso_dir"`
+	MemberName	  string `yaml:"member_name"`
+}
+
 type MountConfig struct {
 	WriteConfig         `yaml:"write"`
 	LogConfig           `yaml:"logging"`
@@ -142,6 +151,7 @@ type MountConfig struct {
 	AuthConfig          `yaml:"auth-config"`
 	EnableHNS           `yaml:"enable-hns"`
 	FileSystemConfig    `yaml:"file-system"`
+	AkesoConfig         `yaml:"akeso"`
 }
 
 // LogRotateConfig defines the parameters for log rotation. It consists of three
@@ -198,5 +208,8 @@ func NewMountConfig() *MountConfig {
 	mountConfig.ListConfig = ListConfig{
 		KernelListCacheTtlSeconds: DefaultKernelListCacheTtlSeconds,
 	}
+
+	mountConfig.AkesoConfig = AkesoConfig{}
+
 	return mountConfig
 }
