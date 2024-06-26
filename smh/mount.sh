@@ -18,6 +18,9 @@ mkdir -p smh/logs/
     --akeso_strategy akeso \
     --akeso_dir smh/akeso.d \
     --akeso_project ornate-flame-397517 \
-    --akeso_topic smh-akeso-strawman \
-    --akeso_sub smh-akeso-strawman-sub1 \
+    --akeso_topic GroupSetup \
+    --akeso_sub GroupSetup-bob \
     wmsr-test-bucket2 mnt
+
+    # --akeso_topic smh-akeso-strawman \
+    # --akeso_sub smh-akeso-strawman-sub1 \

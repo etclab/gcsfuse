@@ -11,30 +11,50 @@ import (
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/logger"
 )
 
-func subscriptionPullLoop(ctx context.Context, sub *pubsub.Subscription,
+func waitForKeyUpdateMessages(ctx context.Context, sub *pubsub.Subscription,
 	config *Config) {
 	for {
 		err := sub.Receive(ctx, func(_ context.Context, msg *pubsub.Message) {
 			logger.Infof("received pubsub message id %s", msg.ID)
 			SavePubsubMessage(msg, config.ArtConfig.pubsubMsgDir)
 
+			// maybe use only one pubsub topic?
+			// check if the tree state exists - if not we can't update the key
+			// this handles the case when member is starting up for the first time
+			// and the update msg is received before the setup msg
+			stateFile := config.ArtConfig.treeStateFile
+			if !FileExists(stateFile) {
+				logger.Errorf("tree state file not found: %v", stateFile)
+				return
+			}
+
 			attrs := msg.Attributes
 			msgType, ok := attrs["messageType"]
+
 			if ok {
-				if msgType == "setup_msg" {
-					processSetupMessage(msg, config)
-				} else if msgType == "update_key" {
+				if msgType == "update_key" {
 					// TODO: this will be triggered by a timer or some other event
 					// TODO: for now we send a dummy message of type update_key to trigger this
 
-					// member updates their key and broadcasts the update message
-					msgData := updateKey(msg, config)
-					msgAttrs := map[string]string{"messageType": "update_msg"}
+					msgFor, ok := attrs["messageFor"]
+					if ok && msgFor == config.ArtConfig.memberName {
+						// member updates their key and broadcasts the update message
+						msgData := updateKey(msg, config)
+						msgAttrs := map[string]string{
+							"messageType": "update_msg",
+							"updatedBy":   config.ArtConfig.memberName,
+						}
 
-					PublishMessage(ctx, msgData, msgAttrs, config)
+						PublishMessage(ctx, msgData, msgAttrs, config)
+					} else {
+						logger.Infof("skipping update_key message meant for: %v", msgFor)
+					}
 				} else if msgType == "update_msg" {
-
-					processUpdateMessage(msg, config)
+					if attrs["updatedBy"] == config.ArtConfig.memberName {
+						logger.Infof("skipping own update message")
+					} else {
+						processUpdateMessage(msg, config)
+					}
 				} else {
 					logger.Errorf("Unknown message type: %v", msgType)
 				}
@@ -52,6 +72,27 @@ func subscriptionPullLoop(ctx context.Context, sub *pubsub.Subscription,
 	}
 }
 
+func subscriptionPullLoop(ctx context.Context, sub *pubsub.Subscription,
+	config *Config) {
+	for {
+		err := sub.Receive(ctx, func(_ context.Context, msg *pubsub.Message) {
+			logger.Infof("received pubsub message id %s", msg.ID)
+			SavePubsubMessage(msg, config.ArtConfig.pubsubMsgDir)
+
+			err := processSetupMessage(msg, config)
+			if err != nil {
+				logger.Errorf("processSetupMessage failed: %v", err)
+			} else {
+				msg.Ack()
+			}
+		})
+		if err != nil {
+			logger.Warnf("sub.Receive() failed: %v .. shutting down", err)
+			os.Exit(1) // TODO: is there a more graceful way?
+		}
+	}
+}
+
 func StartSubscriptionPullLoop(config *Config) error {
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, config.ProjectID)
@@ -61,6 +102,20 @@ func StartSubscriptionPullLoop(config *Config) error {
 
 	sub := client.Subscription(config.SubID)
 	go subscriptionPullLoop(ctx, sub, config)
+
+	return nil
+}
+
+// todo: refactor this with the above function
+func StartKeyUpdateSubscriptionPullLoop(config *Config) error {
+	ctx := context.Background()
+	client, err := pubsub.NewClient(ctx, config.ProjectID)
+	if err != nil {
+		return fmt.Errorf("pubsub.NewClient failed: %w", err)
+	}
+
+	sub := client.Subscription(config.ArtConfig.keyUpdateSubID)
+	go waitForKeyUpdateMessages(ctx, sub, config)
 
 	return nil
 }
@@ -93,11 +148,11 @@ func updateKey(msg *pubsub.Message, config *Config) []byte {
 	state.SaveStageKey(stageKeyFile)
 
 	// update the stage key
-	// stageKeyBytes, err := os.ReadFile(stageKeyFile)
-	// if err != nil {
-	// 	logger.Errorf("os.ReadFile(stageKeyFile) failed: %v", err)
-	// }
-	// config.SetKey(stageKeyBytes)
+	stageKeyBytes, err := os.ReadFile(stageKeyFile)
+	if err != nil {
+		logger.Errorf("os.ReadFile(stageKeyFile) failed: %v", err)
+	}
+	config.SetKey(stageKeyBytes)
 
 	macBytes, err := os.ReadFile(updateMsgMacFile)
 	if err != nil {
@@ -118,12 +173,12 @@ func updateKey(msg *pubsub.Message, config *Config) []byte {
 	return msgBytes
 }
 
-func processSetupMessage(msg *pubsub.Message, config *Config) {
+func processSetupMessage(msg *pubsub.Message, config *Config) error {
 	// TODO: load config from yml file
 	ac := config.ArtConfig
 
 	idx := ac.index
-	// memberName := ac.memberName
+	memberName := ac.memberName
 
 	initiatorPubIKFile := ac.initiatorPubIKFile
 	privEKFile := ac.memberPrivEKFile
@@ -134,45 +189,42 @@ func processSetupMessage(msg *pubsub.Message, config *Config) {
 	stateFile := ac.treeStateFile
 	stageKeyFile := ac.stageKeyFile
 
-	// TODO: skipping all this for now
-	// TODO: for now we're using static files in the respective directory
-	// TODO: and reading the keys, messages from there
-	// var data SetupGroupMessage
-	// err := json.Unmarshal(msg.Data, &data)
+	var data GroupSetupMessage
+	err := json.Unmarshal(msg.Data, &data)
 
-	// if err != nil {
-	// 	logger.Errorf("error unmarshalling message: %v", err)
-	// }
+	if err != nil {
+		logger.Errorf("error unmarshalling message: %v", err)
+	}
 
-	// setupMsg := data.SetupMsg
-	// signature := data.SetupMsgSig
+	setupMsg := data.SetupMsg
+	signature := data.SetupMsgSig
 
-	// err = SaveSetupMsg(setupMsg, setupMsgFile)
-	// if err != nil {
-	// 	logger.Errorf("SaveSetupMsg failed: %v", err)
-	// }
+	err = SaveSetupMsg(setupMsg, setupMsgFile)
+	if err != nil {
+		logger.Errorf("SaveSetupMsg failed: %v", err)
+	}
 
-	// err = os.WriteFile(sigFile, signature, 0666)
-	// if err != nil {
-	// 	logger.Errorf("error writing sign file: %v", err)
-	// }
+	err = os.WriteFile(sigFile, signature, 0666)
+	if err != nil {
+		logger.Errorf("error writing sign file: %v", err)
+	}
 
-	// // save initiator public keys to file
-	// err = SavePubIKFile(data.InPubKey, initiatorPubIKFile)
-	// if err != nil {
-	// 	logger.Errorf("SavePubIKFile failed: %v", err)
-	// }
+	// save initiator public keys to file
+	err = SavePubIKFile(data.InPubKey, initiatorPubIKFile)
+	if err != nil {
+		logger.Errorf("SavePubIKFile failed: %v", err)
+	}
 
-	// // now for the private key
-	// memberEK, ok := data.EKeys[memberName]
-	// if !ok {
-	// 	logger.Errorf("no private EK found for member %v", memberName)
-	// }
+	// now for the private key
+	memberEK, ok := data.EKeys[memberName]
+	if !ok {
+		logger.Errorf("no private EK found for member %v", memberName)
+	}
 
-	// err = SavePrivEKFile(memberEK, privEKFile)
-	// if err != nil {
-	// 	logger.Errorf("SavePrivEKFile failed: %v", err)
-	// }
+	err = SavePrivEKFile(memberEK, privEKFile)
+	if err != nil {
+		logger.Errorf("SavePrivEKFile failed: %v", err)
+	}
 
 	state := art.ProcessSetupMessage(idx, privEKFile, setupMsgFile,
 		initiatorPubIKFile, sigFile)
@@ -180,20 +232,20 @@ func processSetupMessage(msg *pubsub.Message, config *Config) {
 	state.Save(stateFile)
 	state.SaveStageKey(stageKeyFile)
 
-	// TODO: update the stage key
-	// stageKey, err := os.ReadFile(stageKeyFile)
-	// if err != nil {
-	// 	logger.Errorf("os.ReadFile(stageKeyFile) failed: %v", err)
-	// }
+	stageKey, err := os.ReadFile(stageKeyFile)
+	if err != nil {
+		logger.Errorf("os.ReadFile(stageKeyFile) failed: %v", err)
+	}
 
-	// config.SetKey(stageKey)
+	config.SetKey(stageKey)
+
+	return nil
 }
 
-func processUpdateMessage(msg *pubsub.Message, config *Config) {
+func processUpdateMessage(msg *pubsub.Message, config *Config) error {
 	logger.Infof("processing update message with id %s", msg.ID)
 
 	data := msg.Data
-	// data := []byte(`{"UpdatedBy":"bob","UpdateMsg":{"Idx":2,"PathPublicKeys":["LS0tLS1CRUdJTiBYMjU1MTkgUFVCTElDIEtFWS0tLS0tCk1Db3dCUVlESzJWdUF5RUFNbXN3bjVyTVgwTE10VU1aVGRldzdzSG1qbTk0cVZCVjJwVFhqVFNvNlc4PQotLS0tLUVORCBYMjU1MTkgUFVCTElDIEtFWS0tLS0tCg==","LS0tLS1CRUdJTiBYMjU1MTkgUFVCTElDIEtFWS0tLS0tCk1Db3dCUVlESzJWdUF5RUFEK0ZhSFRnd0VEQzM4SFU5djhvdWJ1RmZibnBjbStJWmVva1FrWTlpQm1BPQotLS0tLUVORCBYMjU1MTkgUFVCTElDIEtFWS0tLS0tCg==","LS0tLS1CRUdJTiBYMjU1MTkgUFVCTElDIEtFWS0tLS0tCk1Db3dCUVlESzJWdUF5RUFURTdTNzFOYkwvblJvNlliMnJINDc4TmR2SXVkalMzWUhJUno4NTkwTFdnPQotLS0tLUVORCBYMjU1MTkgUFVCTElDIEtFWS0tLS0tCg=="]},"UpdateMsgMac":"Q/j/e1KEhwFFTYnOYEpQrEMVnUWjek2i7U/wF+vxTlw="}`)
 
 	var keyUpdateMsg KeyUpdateMessage
 	err := json.Unmarshal(data, &keyUpdateMsg)
@@ -205,7 +257,7 @@ func processUpdateMessage(msg *pubsub.Message, config *Config) {
 	// todo: if applying the update here skip the state and stage key update on update_key
 	if keyUpdateMsg.UpdatedBy == config.ArtConfig.memberName {
 		logger.Infof("skipping own update message")
-		return
+		return nil
 	}
 
 	ac := config.ArtConfig
@@ -217,9 +269,22 @@ func processUpdateMessage(msg *pubsub.Message, config *Config) {
 	updateMsgFile := ac.updateMsgFile
 	updateMsgMacFile := ac.updateMsgMacFile
 
+	err = SaveUpdateMsg(keyUpdateMsg.UpdateMsg, updateMsgFile)
+	if err != nil {
+		logger.Errorf("SaveUpdateMsg failed: %v", err)
+	}
+
+	RemoveFileIfExists(updateMsgMacFile)
+	err = os.WriteFile(updateMsgMacFile, keyUpdateMsg.UpdateMsgMac, 0666)
+	if err != nil {
+		logger.Errorf("error writing mac file: %v", err)
+	}
+
 	state := art.ProcessUpdateMessage(idx, stateFile, updateMsgFile, updateMsgMacFile)
 
 	state.Save(stateFile)
 	RemoveFileIfExists(stageKeyFile)
 	state.SaveStageKey(stageKeyFile)
+
+	return nil
 }
