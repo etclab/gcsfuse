@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	StrategyKey  = "akeso_strategy"
 	NestedHeader = "akeso_header"
 )
 

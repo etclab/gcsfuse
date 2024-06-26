@@ -24,7 +24,7 @@ import (
 
 	// SMH
 	//"github.com/etclab/aes256"
-	//"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/logger"
 )
 
@@ -143,6 +143,11 @@ func (oc *fullObjectCreator) Create(
 			return
 		}
 	}*/
+
+	if _, ok := metadataMap[akeso.StrategyKey]; !ok {
+		logger.Debugf("%s:fullObjectCreate.Create(%s): srcObject does not have an %s; adding one", SMH_PREFIX, objectName, akeso.StrategyKey)
+		metadataMap[akeso.StrategyKey] = oc.bucket.AkesoStrategy()
+	}
 
 	o, err = oc.bucket.CreateObject(ctx, req)
 	if err != nil {

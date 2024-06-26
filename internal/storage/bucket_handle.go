@@ -94,6 +94,10 @@ func (bh *bucketHandle) BucketType() gcs.BucketType {
 	return bh.bucketType
 }
 
+func (bh *bucketHandle) AkesoStrategy() string {
+	return bh.akesoConfig.Strategy
+}
+
 func (bh *bucketHandle) NewReader(
 	ctx context.Context,
 	req *gcs.ReadObjectRequest) (io.ReadCloser, error) {
@@ -232,6 +236,8 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 		err = fmt.Errorf("encryption failed: %w", err)
 		return
 	}
+
+	req.Metadata[akeso.StrategyKey] = bh.akesoConfig.Strategy
 
 	header, ciphertext, err := nestedaes.SplitHeaderPayload(data)
 	if err != nil {

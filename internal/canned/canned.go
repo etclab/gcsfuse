@@ -21,6 +21,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/fake"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/storage/gcs"
 	"golang.org/x/net/context"
@@ -56,8 +57,8 @@ const (
 
 // Create a fake bucket with canned contents as described in the comments for
 // FakeBucketName.
-func MakeFakeBucket(ctx context.Context) (b gcs.Bucket) {
-	b = fake.NewFakeBucket(timeutil.RealClock(), FakeBucketName)
+func MakeFakeBucket(ctx context.Context, akesoConfig *akeso.Config) (b gcs.Bucket) {
+	b = fake.NewFakeBucket(timeutil.RealClock(), FakeBucketName, akesoConfig.Strategy)
 
 	// Set up contents.
 	contents := map[string]string{

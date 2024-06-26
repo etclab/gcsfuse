@@ -208,6 +208,31 @@ func (m *mockBucket) Name() (o0 string) {
 	return
 }
 
+// TODO: did this break a test? how does oglemock work?
+func (m *mockBucket) AkesoStrategy() (o0 string) {
+	// Get a file name and line number for the caller.
+	_, file, line, _ := runtime.Caller(1)
+
+	// Hand the call off to the controller, which does most of the work.
+	retVals := m.controller.HandleMethodCall(
+		m,
+		"AkesoStrategy",
+		file,
+		line,
+		[]interface{}{})
+
+	if len(retVals) != 1 {
+		panic(fmt.Sprintf("mockBucket.AkesoStrategy: invalid return values: %v", retVals))
+	}
+
+	// o0 string
+	if retVals[0] != nil {
+		o0 = retVals[0].(string)
+	}
+
+	return
+}
+
 func (m *mockBucket) BucketType() (o0 gcs.BucketType) {
 	// Get a file name and line number for the caller.
 	_, file, line, _ := runtime.Caller(1)

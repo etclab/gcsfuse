@@ -413,6 +413,13 @@ func (job *Job) downloadObjectAsync() {
 				}
 			} else {
 				// (start decrypt)
+				strategy, ok := job.object.Metadata[akeso.StrategyKey]
+				if !ok || strategy != job.akesoConfig.Strategy {
+					err = fmt.Errorf("downloadObjectAsync: unsupported %s: %s", akeso.StrategyKey, strategy)
+					job.failWhileDownloading(err)
+					return
+				}
+
 				header, err := akeso.MetadataNestedHeader(job.object.Metadata)
 				if err != nil {
 					err = fmt.Errorf("downloadObjectAsync: %w", err)

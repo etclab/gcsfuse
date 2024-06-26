@@ -57,6 +57,9 @@ type Bucket interface {
 	// Return Type of bucket e.g. Hierarchical or NonHierarchical
 	BucketType() BucketType
 
+	// Return Akeso strategy
+	AkesoStrategy() string
+
 	// Create a reader for the contents of a particular generation of an object.
 	// On a nil error, the caller must arrange for the reader to be closed when
 	// it is no longer needed.

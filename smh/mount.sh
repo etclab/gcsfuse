@@ -14,7 +14,7 @@ rm -f smh/logs/log.json
     --debug_fs \
     --debug_gcs \
     --debug_http \
-    --akeso_strategy strawman \
+    --akeso_strategy akeso \
     --akeso_dir smh/akeso.d \
     --akeso_project ornate-flame-397517 \
     --akeso_topic smh-akeso-strawman \

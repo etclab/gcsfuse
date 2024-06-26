@@ -67,6 +67,10 @@ func (b *prefixBucket) BucketType() gcs.BucketType {
 	return b.wrapped.BucketType()
 }
 
+func (b *prefixBucket) AkesoStrategy() string {
+	return b.wrapped.AkesoStrategy()
+}
+
 func (b *prefixBucket) NewReader(
 	ctx context.Context,
 	req *gcs.ReadObjectRequest) (rc io.ReadCloser, err error) {

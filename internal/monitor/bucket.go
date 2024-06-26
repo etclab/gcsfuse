@@ -118,6 +118,10 @@ func (mb *monitoringBucket) BucketType() gcs.BucketType {
 	return mb.wrapped.BucketType()
 }
 
+func (mb *monitoringBucket) AkesoStrategy() string {
+	return mb.wrapped.AkesoStrategy()
+}
+
 func (mb *monitoringBucket) NewReader(
 	ctx context.Context,
 	req *gcs.ReadObjectRequest) (rc io.ReadCloser, err error) {
