@@ -57,7 +57,7 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v1.0.4 // indirect
 	github.com/etclab/aes256 v0.1.1 // indirect
 	github.com/etclab/mu v0.1.0 // indirect
-	github.com/etclab/nestedaes v0.0.0-20240611135518-1bfa477e1f3d // indirect
+	github.com/etclab/nestedaes v0.0.0-20240626053814-7df91f8699c0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
