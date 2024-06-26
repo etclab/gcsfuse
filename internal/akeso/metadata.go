@@ -1,14 +1,14 @@
 package akeso
 
 import (
-	"encoding/hex"
+	b64 "encoding/base64"
 	"fmt"
 	//"github.com/etclab/aes256"
 )
 
 const (
 	StrategyKey  = "akeso_strategy"
-	NestedHeader = "akeso_header"
+	NestedHeader = "akeso_deks"
 )
 
 // value is the string
@@ -113,13 +113,13 @@ func SetMetadataDataTag(metadata map[string]string, tag []byte) error {
 func MetadataNestedHeader(metadata map[string]string) ([]byte, error) {
 	key := NestedHeader
 
-	hexHeader, ok := metadata[key]
+	b64Header, ok := metadata[key]
 	if !ok {
 		return nil, MetadataNoExistError(key)
 	}
 
 	// TODO: b64?
-	header, err := hex.DecodeString(hexHeader)
+	header, err := b64.StdEncoding.DecodeString(b64Header)
 	if err != nil {
 		return nil, NewMetadataDecodeError(key, err)
 	}
@@ -134,7 +134,7 @@ func SetMetadataNestedHeader(metadata map[string]string, header []byte) error {
 
 	// TODO: sanity check size?
 
-	hexHeader := hex.EncodeToString(header)
+	hexHeader := b64.StdEncoding.EncodeToString(header)
 	metadata[key] = hexHeader
 
 	return nil
