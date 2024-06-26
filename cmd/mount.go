@@ -106,10 +106,17 @@ be interacting with the file system.`)
 	}
 	bm := gcsx.NewBucketManager(bucketCfg, storageHandle)
 
-	// Start listening on pubsub subscription for key updates
+	// Start listening on pubsub subscription for setup message
 	err = akeso.StartSubscriptionPullLoop(akesoConfig)
 	if err != nil {
 		err = fmt.Errorf("StartSubscriptionPullLoop: %w", err)
+		return
+	}
+
+	// Start listening on pubsub subscription for update messages
+	err = akeso.StartKeyUpdateSubscriptionPullLoop(akesoConfig)
+	if err != nil {
+		err = fmt.Errorf("StartKeyUpdateSubscriptionPullLoop: %w", err)
 		return
 	}
 

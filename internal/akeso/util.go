@@ -34,7 +34,12 @@ func SavePubIKFile(ikKeyPair []byte, fileName string) error {
 		return fmt.Errorf("error unmarshalling public IK: %v", err)
 	}
 
-	pubKey := ed25519.PublicKey(keyPair.PublicKey)
+	pubIkBytes, err := base64.StdEncoding.DecodeString(keyPair.PublicKey)
+	if err != nil {
+		return fmt.Errorf("decoding initiator public ik failed: %w", err)
+	}
+
+	pubKey := ed25519.PublicKey(pubIkBytes)
 	err = art.WritePublicIKToFile(pubKey, fileName, art.EncodingPEM)
 	if err != nil {
 		return fmt.Errorf("error writing public IK file: %v", err)
@@ -84,6 +89,23 @@ func SaveSetupMsg(setupMsg art.SetupMessage, fileName string) error {
 	return nil
 }
 
+func SaveUpdateMsg(updateMsg art.UpdateMessage, fileName string) error {
+	var buf bytes.Buffer
+
+	enc := json.NewEncoder(&buf)
+	enc.SetIndent("", "    ")
+	enc.Encode(updateMsg)
+
+	updateMsgBytes := buf.Bytes()
+
+	err := os.WriteFile(fileName, updateMsgBytes, 0666)
+	if err != nil {
+		return fmt.Errorf("error writing update message file: %v", err)
+	}
+
+	return nil
+}
+
 func SavePubsubMessage(msg *pubsub.Message, dir string) {
 	fileName := msg.PublishTime.Format(time.RFC822) + "-" + msg.ID + ".json"
 	filePath := filepath.Join(dir, fileName)
@@ -102,7 +124,9 @@ func SavePubsubMessage(msg *pubsub.Message, dir string) {
 func PublishMessage(ctx context.Context, data []byte, attrs map[string]string,
 	config *Config) {
 	projectID := config.ProjectID
-	topicID := config.TopicID
+	// topicID := config.TopicID
+	// todo: get the correct topicID for update messages
+	topicID := "KeyUpdate"
 
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
@@ -125,11 +149,25 @@ func PublishMessage(ctx context.Context, data []byte, attrs map[string]string,
 	logger.Infof("Published message with msg ID: %v\n", id)
 }
 
-func RemoveFileIfExists(fileName string) {
-	err := os.Remove(fileName)
-	if err != nil && errors.Is(err, os.ErrNotExist) {
-		// ignore if the file doesn't exist
-		logger.Infof("error removing file: %v", err)
+func RemoveFileIfExists(fileName string) error {
+	if FileExists(fileName) {
+		err := os.Remove(fileName)
+		if err != nil {
+			return fmt.Errorf("error removing file: %v", err)
+		}
 	}
-	// todo: handle other errors
+
+	return nil
+}
+
+func FileExists(fileName string) bool {
+	f, err := os.Open(fileName)
+	fileExists := !errors.Is(err, os.ErrNotExist)
+	f.Close()
+	return fileExists
+}
+
+// todo: will refactor this into the code
+func GetSubscription() {
+
 }

@@ -55,15 +55,24 @@ type ArtConfig struct {
 
 	// serialize pubsub messages for debugging
 	pubsubMsgDir string
+
+	keyUpdateTopicID string
+	keyUpdateSubID   string
 }
 
 func DefaultArtConfig(akesoDir string) *ArtConfig {
 	artConfig := &ArtConfig{}
 
 	// how does group member know their index in the group?
+	// artConfig.index = 3
+	// artConfig.memberName = "cici"
 	artConfig.index = 2
 	artConfig.memberName = "bob"
 	artConfig.groupName = "abcd"
+
+	// artConfig.keyUpdateSubID = "KeyUpdate-cici"
+	artConfig.keyUpdateSubID = "KeyUpdate-bob"
+	artConfig.keyUpdateTopicID = "KeyUpdate"
 
 	baseDir := filepath.Join(akesoDir, artConfig.groupName, artConfig.memberName)
 	keysDir := filepath.Join(baseDir, "keys")
