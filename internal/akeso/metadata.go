@@ -1,7 +1,7 @@
 package akeso
 
 import (
-	"encoding/hex"
+	b64 "encoding/base64"
 	"fmt"
 
 	"github.com/etclab/aes256"
@@ -54,7 +54,7 @@ func MetadataDataNonce(metadata map[string]string) ([]byte, error) {
 		return nil, MetadataNoExistError(key)
 	}
 
-	nonce, err := hex.DecodeString(hexNonce)
+	nonce, err := b64.StdEncoding.DecodeString(hexNonce)
 	if err != nil {
 		return nil, NewMetadataDecodeError(key, err)
 	}
@@ -73,8 +73,8 @@ func SetMetadataDataNonce(metadata map[string]string, nonce []byte) error {
 		return aes256.NonceSizeError(len(nonce))
 	}
 
-	hexNonce := hex.EncodeToString(nonce)
-	metadata[key] = hexNonce
+	b64Nonce := b64.StdEncoding.EncodeToString(nonce)
+	metadata[key] = b64Nonce
 
 	return nil
 }
@@ -87,7 +87,7 @@ func MetadataDataTag(metadata map[string]string) ([]byte, error) {
 		return nil, MetadataNoExistError(key)
 	}
 
-	tag, err := hex.DecodeString(hexTag)
+	tag, err := b64.StdEncoding.DecodeString(hexTag)
 	if err != nil {
 		return nil, NewMetadataDecodeError(key, err)
 	}
@@ -106,8 +106,8 @@ func SetMetadataDataTag(metadata map[string]string, tag []byte) error {
 		return aes256.TagSizeError(len(tag))
 	}
 
-	hexTag := hex.EncodeToString(tag)
-	metadata[key] = hexTag
+	b64Tag := b64.StdEncoding.EncodeToString(tag)
+	metadata[key] = b64Tag
 
 	return nil
 }
