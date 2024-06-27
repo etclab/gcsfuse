@@ -241,7 +241,7 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 	req.Metadata[akeso.StrategyKey] = bh.akesoConfig.Strategy
 	err = akeso.SetMetadataDataTag(req.Metadata, tag)
 	if err != nil {
-		err = fmt.Errorf("set metadata failed: %w", err)
+		err = fmt.Errorf("set tag failed: %w", err)
 		return
 	}
 	err = akeso.SetMetadataDataNonce(req.Metadata, nonce)
