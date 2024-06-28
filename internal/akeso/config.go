@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/googlecloudplatform/gcsfuse/v2/internal/config"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/logger"
 )
 
@@ -12,20 +13,17 @@ import (
 const Strategy = "strawman"
 
 type Config struct {
-	Strategy  string
-	AkesoDir  string
-	ProjectID string
-	TopicID   string
-	SubID     string
-	Key       []byte
-	KeyMutex  sync.RWMutex
+	config.AkesoConfig
 
-	ArtConfig ArtConfig
+	Key      []byte
+	KeyMutex sync.RWMutex
+
+	PubSubDir string
 }
 
 func (c *Config) String() string {
-	return fmt.Sprintf("AkesoConfig{Strategy: %q, AkesoDir: %q, ProjectId: %q, TopicID: %q, SubID: %q}",
-		c.Strategy, c.AkesoDir, c.ProjectID, c.TopicID, c.SubID)
+	return fmt.Sprintf("AkesoConfig{Strategy: %q, AkesoDir: %q, ProjectId: %q, MemberName: %q, SetupGroupTopicID: %q, UpdateKeyTopicID: %q}",
+		c.Strategy, c.AkesoDir, c.ProjectID, c.ArtConfig.MemberName, c.SetupTopicID, c.UpdateTopicID)
 }
 
 func (c *Config) SetKey(key []byte) {
@@ -34,41 +32,41 @@ func (c *Config) SetKey(key []byte) {
 	c.Key = key
 }
 
-type ArtConfig struct {
-	index      int
-	memberName string // member name is hash of member's public key/email/name
-	groupName  string // group name is a group id or a group name
+func NewAkesoConfig(mountConfig *config.MountConfig) *Config {
+	akesoConfig := &Config{}
+	akesoConfig.Strategy = mountConfig.Strategy
+	akesoConfig.AkesoDir = mountConfig.AkesoDir
+	akesoConfig.ProjectID = mountConfig.ProjectID
 
-	// keys and setup files are only created once during the setup phase
-	initiatorPubIKFile string
-	memberPrivEKFile   string
+	akesoConfig.SetupTopicID = mountConfig.SetupTopicID
+	akesoConfig.SetupSubID = mountConfig.SetupSubID
+	akesoConfig.UpdateTopicID = mountConfig.UpdateTopicID
+	akesoConfig.UpdateSubID = mountConfig.UpdateSubID
 
-	setupMsgFile    string
-	setupMsgSigFile string
+	akesoConfig.KeyFile = mountConfig.KeyFile
 
-	updateMsgFile    string
-	updateMsgMacFile string
+	artConfig := NewArtConfig(mountConfig)
+	akesoConfig.ArtConfig = *artConfig
+	akesoConfig.PubSubDir = artConfig.PubSubDir
 
-	// treeStateFile and stageKeyFile are updated by all the setup and update messages
-	treeStateFile string
-	// there will be multiple stage key files
-	// rename the current stageKeyFile to something else
-	// then write the stageKeyFile
-	stageKeyFile string
-
-	// serialize pubsub messages for debugging
-	pubsubMsgDir string
+	return akesoConfig
 }
 
-func DefaultArtConfig(akesoDir string) *ArtConfig {
-	artConfig := &ArtConfig{}
+func NewArtConfig(mountConfig *config.MountConfig) *config.ArtConfig {
+	artConfig := &config.ArtConfig{}
+
+	akesoConfig := &mountConfig.AkesoConfig
+	ac := mountConfig.AkesoConfig.ArtConfig
 
 	// how does group member know their index in the group?
-	artConfig.index = 2
-	artConfig.memberName = "bob"
-	artConfig.groupName = "abcd"
+	// artConfig.index = 3
+	// artConfig.memberName = "cici"
+	// artConfig.memberName = "abcd"
+	artConfig.Index = ac.Index
+	artConfig.MemberName = ac.MemberName
+	artConfig.GroupName = ac.GroupName
 
-	baseDir := filepath.Join(akesoDir, artConfig.groupName, artConfig.memberName)
+	baseDir := filepath.Join(akesoConfig.AkesoDir, ac.GroupName, ac.MemberName)
 	keysDir := filepath.Join(baseDir, "keys")
 	setupDir := filepath.Join(baseDir, "setup")
 	pubsubMsgDir := filepath.Join(baseDir, "pubsub")
@@ -82,29 +80,29 @@ func DefaultArtConfig(akesoDir string) *ArtConfig {
 	// smh/akeso.d/{groupName}/{memberName}/keys/
 	// smh/akeso.d/{groupName}/{memberName}/keys/initiator-ik-pub.pem // initiatorPubIKFile
 	// smh/akeso.d/{groupName}/{memberName}/keys/member-ek.pem // memberPrivEKFile
-	artConfig.initiatorPubIKFile = filepath.Join(keysDir, "initiator-ik-pub.pem")
-	artConfig.memberPrivEKFile = filepath.Join(keysDir, "member-ek.pem")
+	artConfig.InitiatorPubIKFile = filepath.Join(keysDir, ac.InitiatorPubIKFile)
+	artConfig.MemberPrivEKFile = filepath.Join(keysDir, ac.MemberPrivEKFile)
 
 	// smh/akeso.d/{groupName}/{memberName}/setup/
 	// smh/akeso.d/{groupName}/{memberName}/setup/setup.msg // setupMsgFile
 	// smh/akeso.d/{groupName}/{memberName}/setup/setup.msg.sig // setupMsgSigFile
-	artConfig.setupMsgFile = filepath.Join(setupDir, "setup.msg")
-	artConfig.setupMsgSigFile = filepath.Join(setupDir, "setup.msg.sig")
+	artConfig.SetupMsgFile = filepath.Join(setupDir, ac.SetupMsgFile)
+	artConfig.SetupMsgSigFile = filepath.Join(setupDir, ac.SetupMsgSigFile)
 
 	// smh/akeso.d/{groupName}/{memberName}/state.json // treeStateFile
 	// smh/akeso.d/{groupName}/{memberName}/stage-key.pem // stageKeyFile
-	artConfig.treeStateFile = filepath.Join(baseDir, "state.json")
-	artConfig.stageKeyFile = filepath.Join(baseDir, "stage-key.pem")
+	artConfig.TreeStateFile = filepath.Join(baseDir, ac.TreeStateFile)
+	artConfig.StageKeyFile = filepath.Join(baseDir, ac.StageKeyFile)
 
 	// smh/akeso.d/{groupName}/{memberName}/pubsub // pubsubMsgDir
 	// smh/akeso.d/{groupName}/{memberName}/pubsub/{publishTime}-{msgID}.json
-	artConfig.pubsubMsgDir = pubsubMsgDir
+	artConfig.PubSubDir = pubsubMsgDir
 
 	// smh/akeso.d/{groupName}/{memberName}/update/
 	// smh/akeso.d/{groupName}/{memberName}/update/update.msg
 	// smh/akeso.d/{groupName}/{memberName}/update/update.msg.mac
-	artConfig.updateMsgFile = filepath.Join(updateDir, "update.msg")
-	artConfig.updateMsgMacFile = filepath.Join(updateDir, "update.msg.mac")
+	artConfig.UpdateMsgFile = filepath.Join(updateDir, ac.UpdateMsgFile)
+	artConfig.UpdateMsgMacFile = filepath.Join(updateDir, ac.UpdateMsgMacFile)
 
 	return artConfig
 }

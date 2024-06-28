@@ -383,46 +383,6 @@ func newApp() (app *cli.App) {
 				Value: config.DefaultExperimentalMetadataPrefetchOnMount,
 				Usage: "Experimental: This indicates whether or not to prefetch the metadata (prefilling of metadata caches and creation of inodes) of the mounted bucket at the time of mounting the bucket. Supported values: \"disabled\", \"sync\" and \"async\". Any other values will return error on mounting. This is applicable only to static mounting, and not to dynamic mounting.",
 			},
-
-			/////////////////////////
-			// Akeso
-			/////////////////////////
-
-			// cli.StringFlag{
-			// 	Name:  "akeso-config",
-			// 	Value: "",
-			// 	Usage: "The path to the Akeso config file",
-			// },
-
-			cli.StringFlag{
-				Name:  "akeso_strategy",
-				Value: "statickey",
-				Usage: "The Akeso encryption strategy to use.",
-			},
-
-			cli.StringFlag{
-				Name:  "akeso_dir",
-				Value: "",
-				Usage: "The Akeso direcotry for storing keying material.",
-			},
-
-			cli.StringFlag{
-				Name:  "akeso_project",
-				Value: "",
-				Usage: "The cloud project id.",
-			},
-
-			cli.StringFlag{
-				Name:  "akeso_sub",
-				Value: "",
-				Usage: "The Akeso pubsub subscription id.",
-			},
-
-			cli.StringFlag{
-				Name:  "akeso_topic",
-				Value: "",
-				Usage: "The Akeso pubsub topic id.",
-			},
 		},
 	}
 
@@ -496,13 +456,6 @@ type flagStorage struct {
 	// This is applicable only to single-bucket mount-points, and not to dynamic-mount points. This is because dynamic-mounts don't mount the bucket(s) at the time of
 	// gcsfuse command itself, which flag is targeted at.
 	ExperimentalMetadataPrefetchOnMount string
-
-	// Aekso
-	AkesoStrategy string
-	AkesoDir      string
-	AkesoProject  string
-	AkesoTopic    string
-	AkesoSub      string
 }
 
 func resolveFilePath(filePath string, configKey string) (resolvedPath string, err error) {
@@ -547,10 +500,10 @@ func resolvePathForTheFlagsInContext(c *cli.Context) (err error) {
 		return fmt.Errorf("resolving for config-file: %w", err)
 	}
 
-	err = resolvePathForTheFlagInContext("akeso_dir", c)
-	if err != nil {
-		return fmt.Errorf("resolving for akeso_dir: %w", err)
-	}
+	// err = resolvePathForTheFlagInContext("akeso_dir", c)
+	// if err != nil {
+	// 	return fmt.Errorf("resolving for akeso_dir: %w", err)
+	// }
 
 	return
 }
@@ -565,6 +518,17 @@ func resolveConfigFilePaths(mountConfig *config.MountConfig) (err error) {
 	// Resolve cache-dir path
 	resolvedPath, err := resolveFilePath(string(mountConfig.CacheDir), "cache-dir")
 	mountConfig.CacheDir = config.CacheDir(resolvedPath)
+	if err != nil {
+		return
+	}
+
+	// err = resolvePathForTheFlagInContext("akeso_dir", c)
+	// if err != nil {
+	// 	return fmt.Errorf("resolving for akeso_dir: %w", err)
+	// }
+
+	resolvedAkesoPath, err := resolveFilePath(string(mountConfig.AkesoDir), "akeso-dir")
+	mountConfig.AkesoDir = resolvedAkesoPath
 	if err != nil {
 		return
 	}
@@ -652,13 +616,6 @@ func populateFlags(c *cli.Context) (flags *flagStorage, err error) {
 
 		// Post-mount actions
 		ExperimentalMetadataPrefetchOnMount: c.String(ExperimentalMetadataPrefetchOnMountFlag),
-
-		// Akeso
-		AkesoStrategy: c.String("akeso_strategy"),
-		AkesoDir:      c.String("akeso_dir"),
-		AkesoProject:  c.String("akeso_project"),
-		AkesoTopic:    c.String("akeso_topic"),
-		AkesoSub:      c.String("akeso_sub"),
 	}
 
 	// Handle the repeated "-o" flag.

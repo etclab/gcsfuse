@@ -142,6 +142,42 @@ type MountConfig struct {
 	AuthConfig          `yaml:"auth-config"`
 	EnableHNS           `yaml:"enable-hns"`
 	FileSystemConfig    `yaml:"file-system"`
+	AkesoConfig         `yaml:"akeso"`
+}
+
+type ArtConfig struct {
+	Index      int    `yaml:"index"`
+	MemberName string `yaml:"member-name"`
+	GroupName  string `yaml:"group-name"`
+
+	InitiatorPubIKFile string `yaml:"initiator-pub-ik-file"`
+	MemberPrivEKFile   string `yaml:"member-ek-file"`
+
+	SetupMsgFile    string `yaml:"setup-msg-file"`
+	SetupMsgSigFile string `yaml:"setup-msg-sig-file"`
+
+	UpdateMsgFile    string `yaml:"update-msg-file"`
+	UpdateMsgMacFile string `yaml:"update-msg-sig-file"`
+
+	TreeStateFile string `yaml:"tree-state-file"`
+	StageKeyFile  string `yaml:"stage-key-file"`
+
+	PubSubDir string
+}
+
+type AkesoConfig struct {
+	Strategy  string `yaml:"strategy"`
+	AkesoDir  string `yaml:"akeso-dir"`
+	ProjectID string `yaml:"project-id"`
+
+	SetupTopicID  string `yaml:"setup-topic-id"`
+	SetupSubID    string `yaml:"setup-sub-id"`
+	UpdateTopicID string `yaml:"update-topic-id"`
+	UpdateSubID   string `yaml:"update-sub-id"`
+
+	KeyFile string `yaml:"key-file"`
+
+	ArtConfig ArtConfig `yaml:"art"` //
 }
 
 // LogRotateConfig defines the parameters for log rotation. It consists of three
@@ -198,5 +234,6 @@ func NewMountConfig() *MountConfig {
 	mountConfig.ListConfig = ListConfig{
 		KernelListCacheTtlSeconds: DefaultKernelListCacheTtlSeconds,
 	}
+
 	return mountConfig
 }
