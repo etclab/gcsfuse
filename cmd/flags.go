@@ -456,14 +456,6 @@ type flagStorage struct {
 	// This is applicable only to single-bucket mount-points, and not to dynamic-mount points. This is because dynamic-mounts don't mount the bucket(s) at the time of
 	// gcsfuse command itself, which flag is targeted at.
 	ExperimentalMetadataPrefetchOnMount string
-
-	// Akeso
-	// AkesoStrategy string
-	// AkesoDir      string
-	// AkesoProject  string
-	// AkesoSetupTopic    string
-	// AkesoUpdateTopic	string
-	// AkesoMember      string
 }
 
 func resolveFilePath(filePath string, configKey string) (resolvedPath string, err error) {
@@ -624,12 +616,6 @@ func populateFlags(c *cli.Context) (flags *flagStorage, err error) {
 
 		// Post-mount actions
 		ExperimentalMetadataPrefetchOnMount: c.String(ExperimentalMetadataPrefetchOnMountFlag),
-
-		// Akeso
-		// AkesoStrategy: c.String("akeso_strategy"),
-		// AkesoDir:      c.String("akeso_dir"),
-		// AkesoProject:  c.String("akeso_project"),
-		// AkesoSetupTopic:    c.String("akeso_topic"),
 	}
 
 	// Handle the repeated "-o" flag.

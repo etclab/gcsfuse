@@ -5,11 +5,10 @@
 
 rm -rf smh/run/filecache
 rm -f smh/logs/log.json
-mkdir -p smh/logs/
 
 
 ./gcsfuse \
-    --config-file smh/conf/config.yaml \
+    --config-file smh/conf/config-cici.yaml \
     --implicit-dirs \
     --debug_fuse_errors \
     --debug_fuse \
@@ -17,4 +16,4 @@ mkdir -p smh/logs/
     --debug_gcs \
     --debug_http \
     --debug_http \
-    wmsr-test-bucket2 mnt 
+    wmsr-test-bucket2 mnt-cici
