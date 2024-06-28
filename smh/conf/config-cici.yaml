@@ -18,15 +18,15 @@ akeso:
     project-id: ornate-flame-397517
 
     setup-topic-id: GroupSetup
-    setup-sub-id: GroupSetup-bob
+    setup-sub-id: GroupSetup-cici
     update-topic-id: KeyUpdate
-    update-sub-id: KeyUpdate-bob
+    update-sub-id: KeyUpdate-cici
 
     key-file: key # TODO: derive this from the stage-key.pem
 
     art: 
-        index: 2
-        member-name: bob
+        index: 3
+        member-name: cici
         group-name: abcd
 
         # akeso.dir/group-name/member-name/keys

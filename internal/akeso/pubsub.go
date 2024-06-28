@@ -13,36 +13,40 @@ import (
 
 func waitForKeyUpdateMessages(ctx context.Context, sub *pubsub.Subscription,
 	config *Config) {
+	ac := config.ArtConfig
 	for {
 		err := sub.Receive(ctx, func(_ context.Context, msg *pubsub.Message) {
 			logger.Infof("received pubsub message id %s", msg.ID)
-			SavePubsubMessage(msg, config.ArtConfig.pubsubMsgDir)
+			SavePubsubMessage(msg, config.PubSubDir)
 
 			// maybe use only one pubsub topic?
 			// check if the tree state exists - if not we can't update the key
 			// this handles the case when member is starting up for the first time
 			// and the update msg is received before the setup msg
-			stateFile := config.ArtConfig.treeStateFile
+			stateFile := ac.TreeStateFile
 			if !FileExists(stateFile) {
 				logger.Errorf("tree state file not found: %v", stateFile)
+
+				msg.Nack()
 				return
 			}
 
 			attrs := msg.Attributes
 			msgType, ok := attrs["messageType"]
 
+			// TODO: think about message ordering and what difference it makes
 			if ok {
 				if msgType == "update_key" {
 					// TODO: this will be triggered by a timer or some other event
 					// TODO: for now we send a dummy message of type update_key to trigger this
 
 					msgFor, ok := attrs["messageFor"]
-					if ok && msgFor == config.ArtConfig.memberName {
+					if ok && msgFor == ac.MemberName {
 						// member updates their key and broadcasts the update message
 						msgData := updateKey(msg, config)
 						msgAttrs := map[string]string{
 							"messageType": "update_msg",
-							"updatedBy":   config.ArtConfig.memberName,
+							"updatedBy":   ac.MemberName,
 						}
 
 						PublishMessage(ctx, msgData, msgAttrs, config)
@@ -50,7 +54,7 @@ func waitForKeyUpdateMessages(ctx context.Context, sub *pubsub.Subscription,
 						logger.Infof("skipping update_key message meant for: %v", msgFor)
 					}
 				} else if msgType == "update_msg" {
-					if attrs["updatedBy"] == config.ArtConfig.memberName {
+					if attrs["updatedBy"] == ac.MemberName {
 						logger.Infof("skipping own update message")
 					} else {
 						processUpdateMessage(msg, config)
@@ -61,7 +65,7 @@ func waitForKeyUpdateMessages(ctx context.Context, sub *pubsub.Subscription,
 
 				msg.Ack()
 			} else {
-				logger.Errorf("Missing message type for topic: %v", config.TopicID)
+				logger.Errorf("Missing message type for topic: %v", config.UpdateTopicID)
 			}
 
 		})
@@ -74,23 +78,24 @@ func waitForKeyUpdateMessages(ctx context.Context, sub *pubsub.Subscription,
 
 func subscriptionPullLoop(ctx context.Context, sub *pubsub.Subscription,
 	config *Config) {
-	for {
-		err := sub.Receive(ctx, func(_ context.Context, msg *pubsub.Message) {
-			logger.Infof("received pubsub message id %s", msg.ID)
-			SavePubsubMessage(msg, config.ArtConfig.pubsubMsgDir)
+	// for {
+	// TODO: ignore setup message if already there
+	err := sub.Receive(ctx, func(_ context.Context, msg *pubsub.Message) {
+		logger.Infof("received pubsub message id %s", msg.ID)
+		SavePubsubMessage(msg, config.PubSubDir)
 
-			err := processSetupMessage(msg, config)
-			if err != nil {
-				logger.Errorf("processSetupMessage failed: %v", err)
-			} else {
-				msg.Ack()
-			}
-		})
+		err := processSetupMessage(msg, config)
 		if err != nil {
-			logger.Warnf("sub.Receive() failed: %v .. shutting down", err)
-			os.Exit(1) // TODO: is there a more graceful way?
+			logger.Errorf("processSetupMessage failed: %v", err)
+		} else {
+			msg.Ack()
 		}
+	})
+	if err != nil {
+		logger.Warnf("sub.Receive() failed: %v .. shutting down", err)
+		os.Exit(1) // TODO: is there a more graceful way?
 	}
+	// }
 }
 
 func StartSubscriptionPullLoop(config *Config) error {
@@ -100,7 +105,7 @@ func StartSubscriptionPullLoop(config *Config) error {
 		return fmt.Errorf("pubsub.NewClient failed: %w", err)
 	}
 
-	sub := client.Subscription(config.SubID)
+	sub := client.Subscription(config.SetupSubID)
 	go subscriptionPullLoop(ctx, sub, config)
 
 	return nil
@@ -114,24 +119,24 @@ func StartKeyUpdateSubscriptionPullLoop(config *Config) error {
 		return fmt.Errorf("pubsub.NewClient failed: %w", err)
 	}
 
-	sub := client.Subscription(config.ArtConfig.keyUpdateSubID)
+	sub := client.Subscription(config.UpdateSubID)
 	go waitForKeyUpdateMessages(ctx, sub, config)
 
 	return nil
 }
 
-// assuming no two members update their keys at the same time
+// // assuming no two members update their keys at the same time
 func updateKey(msg *pubsub.Message, config *Config) []byte {
 	logger.Infof("updating key on receiving message with id %s", msg.ID)
 
 	ac := config.ArtConfig
 
-	idx := ac.index
-	stateFile := ac.treeStateFile
-	stageKeyFile := ac.stageKeyFile
+	idx := ac.Index
+	stateFile := ac.TreeStateFile
+	stageKeyFile := ac.StageKeyFile
 
-	updateMsgFile := ac.updateMsgFile
-	updateMsgMacFile := ac.updateMsgMacFile
+	updateMsgFile := ac.UpdateMsgFile
+	updateMsgMacFile := ac.UpdateMsgMacFile
 
 	updateMsg, state, stageKey := art.UpdateKey(idx, stateFile)
 
@@ -162,7 +167,7 @@ func updateKey(msg *pubsub.Message, config *Config) []byte {
 	keyUpdateMsg := &KeyUpdateMessage{
 		UpdateMsg:    *updateMsg,
 		UpdateMsgMac: macBytes,
-		UpdatedBy:    ac.memberName,
+		UpdatedBy:    ac.MemberName,
 	}
 
 	msgBytes, err := json.Marshal(keyUpdateMsg)
@@ -174,20 +179,19 @@ func updateKey(msg *pubsub.Message, config *Config) []byte {
 }
 
 func processSetupMessage(msg *pubsub.Message, config *Config) error {
-	// TODO: load config from yml file
 	ac := config.ArtConfig
 
-	idx := ac.index
-	memberName := ac.memberName
+	idx := ac.Index
+	memberName := ac.MemberName
 
-	initiatorPubIKFile := ac.initiatorPubIKFile
-	privEKFile := ac.memberPrivEKFile
+	initiatorPubIKFile := ac.InitiatorPubIKFile
+	privEKFile := ac.MemberPrivEKFile
 
-	setupMsgFile := ac.setupMsgFile
-	sigFile := ac.setupMsgSigFile
+	setupMsgFile := ac.SetupMsgFile
+	sigFile := ac.SetupMsgSigFile
 
-	stateFile := ac.treeStateFile
-	stageKeyFile := ac.stageKeyFile
+	stateFile := ac.TreeStateFile
+	stageKeyFile := ac.StageKeyFile
 
 	var data GroupSetupMessage
 	err := json.Unmarshal(msg.Data, &data)
@@ -255,19 +259,19 @@ func processUpdateMessage(msg *pubsub.Message, config *Config) error {
 
 	// todo: does it affect the stage and stage key by reapplying its own update?
 	// todo: if applying the update here skip the state and stage key update on update_key
-	if keyUpdateMsg.UpdatedBy == config.ArtConfig.memberName {
+	if keyUpdateMsg.UpdatedBy == config.ArtConfig.MemberName {
 		logger.Infof("skipping own update message")
 		return nil
 	}
 
 	ac := config.ArtConfig
 
-	idx := ac.index
-	stateFile := ac.treeStateFile
-	stageKeyFile := ac.stageKeyFile
+	idx := ac.Index
+	stateFile := ac.TreeStateFile
+	stageKeyFile := ac.StageKeyFile
 
-	updateMsgFile := ac.updateMsgFile
-	updateMsgMacFile := ac.updateMsgMacFile
+	updateMsgFile := ac.UpdateMsgFile
+	updateMsgMacFile := ac.UpdateMsgMacFile
 
 	err = SaveUpdateMsg(keyUpdateMsg.UpdateMsg, updateMsgFile)
 	if err != nil {

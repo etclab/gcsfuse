@@ -159,26 +159,19 @@ func mountWithArgs(
 	}
 
 	// Akeso configuration
+	akesoConfig := akeso.NewAkesoConfig(mountConfig)
 	if mountConfig.Strategy != akeso.Strategy {
-		err = fmt.Errorf("Akeso strategy not implemented: %s", mountConfig.Strategy)
+		err = fmt.Errorf("akeso strategy not implemented: %s", akeso.Strategy)
 		return
 	}
+
 	var key []byte
-	key, err = aes256.ReadKeyFile(filepath.Join(mountConfig.AkesoDir, "key"))
+	key, err = aes256.ReadKeyFile(filepath.Join(akesoConfig.AkesoDir, "key"))
 	if err != nil {
-		err = fmt.Errorf("Failed to read Akeso key: %w", err)
+		err = fmt.Errorf("failed to read Akeso key: %w", err)
 		return
 	}
-	artConfig := akeso.DefaultArtConfig(mountConfig.AkesoDir)
-	akesoConfig := &akeso.Config{
-		Strategy:          mountConfig.Strategy,
-		AkesoDir:          mountConfig.AkesoDir,
-		ProjectID:         mountConfig.Project,
-		SetupGroupTopicID: mountConfig.SetupChannel,
-		UpdateKeyTopicID:  mountConfig.UpdateChannel,
-		Key:               key,
-		ArtConfig:         *artConfig,
-	}
+	akesoConfig.Key = key
 
 	// Mount the file system.
 	logger.Infof("Creating a mount at %q\n", mountPoint)
