@@ -11,6 +11,8 @@ const (
 	StrategyKey = "akeso_strategy"
 	DataNonce   = "akeso_data_nonce"
 	DataTag     = "akeso_data_tag"
+	KeyNonce    = "akeso_key_nonce"
+	WrappedKey  = "akeso_wrapped_key"
 )
 
 // value is the string
@@ -49,12 +51,12 @@ func (e MetadataEncodeError) Error() string {
 func MetadataDataNonce(metadata map[string]string) ([]byte, error) {
 	key := DataNonce
 
-	hexNonce, ok := metadata[key]
+	b64Nonce, ok := metadata[key]
 	if !ok {
 		return nil, MetadataNoExistError(key)
 	}
 
-	nonce, err := b64.StdEncoding.DecodeString(hexNonce)
+	nonce, err := b64.StdEncoding.DecodeString(b64Nonce)
 	if err != nil {
 		return nil, NewMetadataDecodeError(key, err)
 	}
@@ -82,12 +84,12 @@ func SetMetadataDataNonce(metadata map[string]string, nonce []byte) error {
 func MetadataDataTag(metadata map[string]string) ([]byte, error) {
 	key := DataTag
 
-	hexTag, ok := metadata[key]
+	b64Tag, ok := metadata[key]
 	if !ok {
 		return nil, MetadataNoExistError(key)
 	}
 
-	tag, err := b64.StdEncoding.DecodeString(hexTag)
+	tag, err := b64.StdEncoding.DecodeString(b64Tag)
 	if err != nil {
 		return nil, NewMetadataDecodeError(key, err)
 	}
@@ -108,6 +110,72 @@ func SetMetadataDataTag(metadata map[string]string, tag []byte) error {
 
 	b64Tag := b64.StdEncoding.EncodeToString(tag)
 	metadata[key] = b64Tag
+
+	return nil
+}
+
+func MetadataKeyNonce(metadata map[string]string) ([]byte, error) {
+	key := KeyNonce
+
+	b64Nonce, ok := metadata[key]
+	if !ok {
+		return nil, MetadataNoExistError(key)
+	}
+
+	nonce, err := b64.StdEncoding.DecodeString(b64Nonce)
+	if err != nil {
+		return nil, NewMetadataDecodeError(key, err)
+	}
+
+	if len(nonce) != aes256.NonceSize {
+		return nil, NewMetadataDecodeError(key, aes256.NonceSizeError(len(nonce)))
+	}
+
+	return nonce, nil
+}
+
+func SetMetadataKeyNonce(metadata map[string]string, nonce []byte) error {
+	key := KeyNonce
+
+	if len(nonce) != aes256.NonceSize {
+		return aes256.NonceSizeError(len(nonce))
+	}
+
+	b64Nonce := b64.StdEncoding.EncodeToString(nonce)
+	metadata[key] = b64Nonce
+
+	return nil
+}
+
+func MetadataWrappedKey(metadata map[string]string) ([]byte, error) {
+	key := WrappedKey
+
+	b64WrappedKey, ok := metadata[key]
+	if !ok {
+		return nil, MetadataNoExistError(key)
+	}
+
+	wrappedKey, err := b64.StdEncoding.DecodeString(b64WrappedKey)
+	if err != nil {
+		return nil, NewMetadataDecodeError(key, err)
+	}
+
+	if len(wrappedKey) != aes256.KeySize+aes256.TagSize {
+		return nil, NewMetadataDecodeError(key, fmt.Errorf("unexpected wrapped key length: %d", len(wrappedKey)))
+	}
+
+	return wrappedKey, nil
+}
+
+func SetMetadataWrappedKey(metadata map[string]string, wrappedKey []byte) error {
+	key := WrappedKey
+
+	if len(wrappedKey) != aes256.KeySize+aes256.TagSize {
+		return fmt.Errorf("unexpected wrapped key length: %d", len(wrappedKey))
+	}
+
+	b64WrappedKey := b64.StdEncoding.EncodeToString(wrappedKey)
+	metadata[key] = b64WrappedKey
 
 	return nil
 }

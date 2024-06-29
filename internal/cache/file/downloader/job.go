@@ -420,14 +420,28 @@ func (job *Job) downloadObjectAsync() {
 					return
 				}
 
-				nonce, err := akeso.MetadataDataNonce(job.object.Metadata)
+				dataNonce, err := akeso.MetadataDataNonce(job.object.Metadata)
 				if err != nil {
 					err = fmt.Errorf("downloadObjectAsync: %w", err)
 					job.failWhileDownloading(err)
 					return
 				}
 
-				tag, err := akeso.MetadataDataTag(job.object.Metadata)
+				dataTag, err := akeso.MetadataDataTag(job.object.Metadata)
+				if err != nil {
+					err = fmt.Errorf("downloadObjectAsync: %w", err)
+					job.failWhileDownloading(err)
+					return
+				}
+
+				keyNonce, err := akeso.MetadataKeyNonce(job.object.Metadata)
+				if err != nil {
+					err = fmt.Errorf("downloadObjectAsync: %w", err)
+					job.failWhileDownloading(err)
+					return
+				}
+
+				wrappedKey, err := akeso.MetadataWrappedKey(job.object.Metadata)
 				if err != nil {
 					err = fmt.Errorf("downloadObjectAsync: %w", err)
 					job.failWhileDownloading(err)
@@ -443,13 +457,18 @@ func (job *Job) downloadObjectAsync() {
 					return
 				}
 
-				logger.Debugf("%s:(job *Job) downloadFileAsync(): decrypting", SMH_PREFIX)
-
-				data = append(data, tag...)
-
 				job.akesoConfig.KeyMutex.RLock()
-				data, err = aes256.DecryptGCM(job.akesoConfig.Key, nonce, data, nil)
+				dataKey, err := aes256.DecryptGCM(job.akesoConfig.Key, keyNonce, wrappedKey, nil)
 				job.akesoConfig.KeyMutex.RUnlock()
+				if err != nil {
+					err = fmt.Errorf("downloadObjectAsync: can't unwrap key: %w", err)
+					job.failWhileDownloading(err)
+					return
+				}
+
+				logger.Debugf("%s:(job *Job) downloadFileAsync(): decrypting", SMH_PREFIX)
+				data = append(data, dataTag...)
+				data, err = aes256.DecryptGCM(dataKey, dataNonce, data, nil)
 
 				if err != nil {
 					err = fmt.Errorf("downloadObjectAsync: error while decrypting cache file: %w", err)

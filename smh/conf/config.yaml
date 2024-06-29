@@ -13,7 +13,7 @@ metadata-cache:
     ttl-secs: -1
 
 akeso:
-    strategy: strawman
+    strategy: keywrap
     akeso-dir: smh/akeso.d # ensure smh/akeso.d exists
     project-id: ornate-flame-397517
 
@@ -24,7 +24,7 @@ akeso:
 
     key-file: key # TODO: derive this from the stage-key.pem
 
-    art: 
+    art:
         index: 2
         member-name: bob
         group-name: abcd
@@ -36,7 +36,7 @@ akeso:
         # akeso.dir/group-name/member-name/setup
         setup-msg-file: setup-msg.json
         setup-msg-sig-file: setup-msg-sig.json
-        
+
         # akeso.dir/group-name/member-name/update
         update-msg-file: update-msg.json
         update-msg-sig-file: update-msg-sig.json
