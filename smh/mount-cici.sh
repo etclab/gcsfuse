@@ -4,7 +4,7 @@
 # --tmp-dir
 
 rm -rf smh/run/filecache
-rm -f smh/logs/log.json
+rm -f smh/logs/log-cici.json
 
 
 ./gcsfuse \
