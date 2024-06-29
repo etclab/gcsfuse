@@ -4,11 +4,11 @@
 # --tmp-dir
 
 rm -rf smh/run/filecache
-rm -f smh/logs/log-cici.json
+rm -f smh/logs/log.json
 
 
 ./gcsfuse \
-    --config-file smh/conf/config-cici.yaml \
+    --config-file smh/conf/config.yaml \
     --implicit-dirs \
     --debug_fuse_errors \
     --debug_fuse \
@@ -16,4 +16,4 @@ rm -f smh/logs/log-cici.json
     --debug_gcs \
     --debug_http \
     --debug_http \
-    wmsr-test-bucket2 mnt-cici
+    wmsr-test-bucket2 mnt \

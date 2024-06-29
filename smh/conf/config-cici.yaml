@@ -1,9 +1,9 @@
 logging:
     severity: trace
     format: json
-    file-path: smh/logs/log.json
+    file-path: smh/logs/log-cici.json
 
-cache-dir: smh/run/filecache
+cache-dir: smh/run/filecache-cici
 
 file-cache:
     max-size-mb: -1
@@ -22,7 +22,7 @@ akeso:
     update-topic-id: KeyUpdate
     update-sub-id: KeyUpdate-cici
 
-    key-file: key # TODO: derive this from the stage-key.pem
+    key-file: key
 
     art: 
         index: 3
