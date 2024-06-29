@@ -2,6 +2,7 @@ package akeso
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"sync"
 
@@ -24,6 +25,22 @@ type Config struct {
 func (c *Config) String() string {
 	return fmt.Sprintf("AkesoConfig{Strategy: %q, AkesoDir: %q, ProjectId: %q, MemberName: %q, SetupGroupTopicID: %q, UpdateKeyTopicID: %q}",
 		c.Strategy, c.AkesoDir, c.ProjectID, c.ArtConfig.MemberName, c.SetupTopicID, c.UpdateTopicID)
+}
+
+func (c *Config) SetKeyFile(stageKeyFile string) {
+	salt := []byte("YOUR_RANDOM_SALT")
+	key, err := AESFromPEM(stageKeyFile, salt)
+	if err != nil {
+		logger.Errorf("error: %v", err)
+	}
+
+	keyFile := filepath.Join(c.AkesoDir, "key")
+	err = os.WriteFile(keyFile, key, 0666)
+	if err != nil {
+		logger.Errorf("error writing key file: %v", err)
+	}
+
+	c.SetKey(key)
 }
 
 func (c *Config) SetKey(key []byte) {

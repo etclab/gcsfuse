@@ -22,7 +22,7 @@ akeso:
     update-topic-id: KeyUpdate
     update-sub-id: KeyUpdate-bob
 
-    key-file: key # TODO: derive this from the stage-key.pem
+    key-file: key
 
     art:
         index: 2

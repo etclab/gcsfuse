@@ -153,11 +153,7 @@ func updateKey(msg *pubsub.Message, config *Config) []byte {
 	state.SaveStageKey(stageKeyFile)
 
 	// update the stage key
-	stageKeyBytes, err := os.ReadFile(stageKeyFile)
-	if err != nil {
-		logger.Errorf("os.ReadFile(stageKeyFile) failed: %v", err)
-	}
-	config.SetKey(stageKeyBytes)
+	config.SetKeyFile(stageKeyFile)
 
 	macBytes, err := os.ReadFile(updateMsgMacFile)
 	if err != nil {
@@ -236,12 +232,7 @@ func processSetupMessage(msg *pubsub.Message, config *Config) error {
 	state.Save(stateFile)
 	state.SaveStageKey(stageKeyFile)
 
-	stageKey, err := os.ReadFile(stageKeyFile)
-	if err != nil {
-		logger.Errorf("os.ReadFile(stageKeyFile) failed: %v", err)
-	}
-
-	config.SetKey(stageKey)
+	config.SetKeyFile(stageKeyFile)
 
 	return nil
 }
