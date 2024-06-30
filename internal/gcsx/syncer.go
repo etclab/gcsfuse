@@ -69,12 +69,12 @@ func NewSyncer(
 		bucket: bucket,
 	}
 
-	appendCreator := newAppendObjectCreator(
-		tmpObjectPrefix,
-		bucket)
+	/*appendCreator := newAppendObjectCreator(
+	tmpObjectPrefix,
+	bucket)*/
 
 	// And the syncer.
-	os = newSyncer(appendThreshold, fullCreator, appendCreator)
+	os = newSyncer(appendThreshold, fullCreator /*, appendCreator*/)
 
 	return
 }
@@ -186,12 +186,11 @@ type objectCreator interface {
 // to GCS (for a small create, a compose, and a delete).
 func newSyncer(
 	appendThreshold int64,
-	fullCreator objectCreator,
-	appendCreator objectCreator) (os Syncer) {
+	fullCreator objectCreator /*, appendCreator objectCreator*/) (os Syncer) {
 	os = &syncer{
 		appendThreshold: appendThreshold,
 		fullCreator:     fullCreator,
-		appendCreator:   appendCreator,
+		//appendCreator:   appendCreator,
 	}
 
 	return
@@ -200,7 +199,7 @@ func newSyncer(
 type syncer struct {
 	appendThreshold int64
 	fullCreator     objectCreator
-	appendCreator   objectCreator
+	//appendCreator   objectCreator
 }
 
 func (os *syncer) SyncObject(
@@ -260,7 +259,7 @@ func (os *syncer) SyncObject(
 	// Otherwise, we need to create a new generation. If the source object is
 	// long enough, hasn't been dirtied, and has a low enough component count,
 	// then we can make the optimization of not rewriting its contents.
-	if srcSize >= os.appendThreshold &&
+	/*if srcSize >= os.appendThreshold &&
 		sr.DirtyThreshold == srcSize &&
 		srcObject.ComponentCount < gcs.MaxComponentCount {
 		_, err = content.Seek(srcSize, 0)
@@ -270,15 +269,15 @@ func (os *syncer) SyncObject(
 		}
 
 		o, err = os.appendCreator.Create(ctx, objectName, srcObject, sr.Mtime, content)
-	} else {
-		_, err = content.Seek(0, 0)
-		if err != nil {
-			err = fmt.Errorf("Seek: %w", err)
-			return
-		}
-
-		o, err = os.fullCreator.Create(ctx, objectName, srcObject, sr.Mtime, content)
+	} else {*/
+	_, err = content.Seek(0, 0)
+	if err != nil {
+		err = fmt.Errorf("Seek: %w", err)
+		return
 	}
+
+	o, err = os.fullCreator.Create(ctx, objectName, srcObject, sr.Mtime, content)
+	//}
 
 	// Deal with errors.
 	if err != nil {
