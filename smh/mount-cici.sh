@@ -3,7 +3,7 @@
 # --foreground
 # --tmp-dir
 
-rm -rf smh/run/filecache
+rm -rf smh/run/filecache-cici
 rm -f smh/logs/log-cici.json
 
 
