@@ -226,27 +226,42 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 		return
 	}
 
-	nonce := aes256.NewRandomNonce()
+	keyNonce := aes256.NewRandomNonce()
+	dataKey := aes256.NewRandomKey()
+	dataNonce := aes256.NewRandomNonce()
 
-	bh.akesoConfig.KeyMutex.RLock()
-	data = aes256.EncryptGCM(bh.akesoConfig.Key, nonce, data, nil)
-	bh.akesoConfig.KeyMutex.RUnlock()
+	data = aes256.EncryptGCM(dataKey, dataNonce, data, nil)
 
-	ciphertext, tag, err := aes256.SplitCiphertextTag(data)
+	ciphertext, dataTag, err := aes256.SplitCiphertextTag(data)
 	if err != nil {
 		err = fmt.Errorf("aes256.SplitCiphertextTag failed: %w", err)
 		return
 	}
 
+	// Encrypt the data key
+	bh.akesoConfig.KeyMutex.RLock()
+	wrappedKey := aes256.EncryptGCM(bh.akesoConfig.Key, keyNonce, dataKey, nil)
+	bh.akesoConfig.KeyMutex.RUnlock()
+
 	req.Metadata[akeso.StrategyKey] = bh.akesoConfig.Strategy
-	err = akeso.SetMetadataDataTag(req.Metadata, tag)
+	err = akeso.SetMetadataDataTag(req.Metadata, dataTag)
 	if err != nil {
-		err = fmt.Errorf("set tag failed: %w", err)
+		err = fmt.Errorf("set data tag failed: %w", err)
 		return
 	}
-	err = akeso.SetMetadataDataNonce(req.Metadata, nonce)
+	err = akeso.SetMetadataDataNonce(req.Metadata, dataNonce)
 	if err != nil {
-		err = fmt.Errorf("set nonce failed: %w", err)
+		err = fmt.Errorf("set data nonce failed: %w", err)
+		return
+	}
+	err = akeso.SetMetadataKeyNonce(req.Metadata, keyNonce)
+	if err != nil {
+		err = fmt.Errorf("set key nonce failed: %w", err)
+		return
+	}
+	err = akeso.SetMetadataWrappedKey(req.Metadata, wrappedKey)
+	if err != nil {
+		err = fmt.Errorf("set wrapped key failed: %w", err)
 		return
 	}
 
