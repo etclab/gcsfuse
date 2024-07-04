@@ -23,7 +23,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/etclab/aes256"
+	//"github.com/etclab/aes256"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/cache/data"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/cache/lru"
@@ -420,7 +420,7 @@ func (job *Job) downloadObjectAsync() {
 					return
 				}
 
-				nonce, err := akeso.MetadataDataNonce(job.object.Metadata)
+				/*nonce, err := akeso.MetadataDataNonce(job.object.Metadata)
 				if err != nil {
 					err = fmt.Errorf("downloadObjectAsync: %w", err)
 					job.failWhileDownloading(err)
@@ -464,7 +464,7 @@ func (job *Job) downloadObjectAsync() {
 					err = fmt.Errorf("downloadObjectAsync: error while writing decrypted cache file: %w", err)
 					job.failWhileDownloading(err)
 					return
-				}
+				}*/
 				// (end decrypt)
 
 				job.mu.Lock()

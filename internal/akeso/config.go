@@ -11,7 +11,7 @@ import (
 )
 
 // TODO: dynamic strategy based on passed config
-const Strategy = "strawman"
+const Strategy = "csek"
 
 type Config struct {
 	config.AkesoConfig

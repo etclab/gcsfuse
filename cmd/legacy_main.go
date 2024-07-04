@@ -161,7 +161,7 @@ func mountWithArgs(
 	// Akeso configuration
 	akesoConfig := akeso.NewAkesoConfig(mountConfig)
 	if mountConfig.Strategy != akeso.Strategy {
-		err = fmt.Errorf("akeso strategy not implemented: %s", akeso.Strategy)
+		err = fmt.Errorf("akeso strategy not implemented: %s, use %s", mountConfig.Strategy, akeso.Strategy)
 		return
 	}
 

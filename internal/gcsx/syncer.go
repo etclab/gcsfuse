@@ -23,7 +23,7 @@ import (
 	"golang.org/x/net/context"
 
 	// SMH
-	"github.com/etclab/aes256"
+	//"github.com/etclab/aes256"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/logger"
 )
@@ -133,7 +133,7 @@ func (oc *fullObjectCreator) Create(
 		metadataMap[MtimeMetadataKey] = mtime.UTC().Format(time.RFC3339Nano)
 	}
 
-	if _, ok := metadataMap[akeso.DataNonce]; !ok {
+	/*if _, ok := metadataMap[akeso.DataNonce]; !ok {
 		logger.Debugf("%s:fullObjectCreate.Create(%s): srcObject does not have an %s; adding one", SMH_PREFIX, objectName, akeso.DataNonce)
 		nonce := aes256.NewRandomNonce()
 		err = akeso.SetMetadataDataNonce(metadataMap, nonce)
@@ -141,7 +141,7 @@ func (oc *fullObjectCreator) Create(
 			err = fmt.Errorf("fullObjectCreator.Create: can's set metadata: %w", err)
 			return
 		}
-	}
+	}*/
 
 	if _, ok := metadataMap[akeso.StrategyKey]; !ok {
 		logger.Debugf("%s:fullObjectCreate.Create(%s): srcObject does not have an %s; adding one", SMH_PREFIX, objectName, akeso.StrategyKey)

@@ -38,9 +38,9 @@ import (
 	"google.golang.org/api/iterator"
 
 	// SMH
-	"bytes"
+	//"bytes"
 
-	"github.com/etclab/aes256"
+	//"github.com/etclab/aes256"
 	"github.com/googlecloudplatform/gcsfuse/v2/internal/akeso"
 )
 
@@ -113,6 +113,10 @@ func (bh *bucketHandle) NewReader(
 	}
 
 	obj := bh.bucket.Object(req.Name)
+
+	bh.akesoConfig.KeyMutex.RLock()
+	obj = obj.Key(bh.akesoConfig.Key)
+	bh.akesoConfig.KeyMutex.RUnlock()
 
 	// Switching to the requested generation of object.
 	if req.Generation != 0 {
@@ -219,7 +223,7 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 	}
 
 	// (akeso start)
-	var data []byte
+	/*var data []byte
 	data, err = io.ReadAll(req.Contents)
 	if err != nil {
 		err = fmt.Errorf("io.Readall() of local file failed: %w", err)
@@ -236,10 +240,14 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 	if err != nil {
 		err = fmt.Errorf("aes256.SplitCiphertextTag failed: %w", err)
 		return
-	}
+	}*/
 
 	req.Metadata[akeso.StrategyKey] = bh.akesoConfig.Strategy
-	err = akeso.SetMetadataDataTag(req.Metadata, tag)
+
+	bh.akesoConfig.KeyMutex.RLock()
+	obj = obj.Key(bh.akesoConfig.Key)
+	bh.akesoConfig.KeyMutex.RUnlock()
+	/*err = akeso.SetMetadataDataTag(req.Metadata, tag)
 	if err != nil {
 		err = fmt.Errorf("set tag failed: %w", err)
 		return
@@ -250,7 +258,7 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 		return
 	}
 
-	encReader := bytes.NewReader(ciphertext)
+	encReader := bytes.NewReader(ciphertext)*/
 	// (akeso end)
 
 	// Creating a NewWriter with requested attributes, using Go Storage Client.
@@ -262,8 +270,8 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 	}
 
 	// Copy the contents to the writer.
-	//if _, err = io.Copy(wc, req.Contents); err != nil {
-	if _, err = io.Copy(wc, encReader); err != nil {
+	//if _, err = io.Copy(wc, encReader); err != nil {
+	if _, err = io.Copy(wc, req.Contents); err != nil {
 		err = fmt.Errorf("error in io.Copy: %w", err)
 		return
 	}

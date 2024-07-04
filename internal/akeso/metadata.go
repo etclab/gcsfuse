@@ -1,16 +1,15 @@
 package akeso
 
 import (
-	b64 "encoding/base64"
+	//b64 "encoding/base64"
 	"fmt"
-
-	"github.com/etclab/aes256"
+	//"github.com/etclab/aes256"
 )
 
 const (
 	StrategyKey = "akeso_strategy"
-	DataNonce   = "akeso_data_nonce"
-	DataTag     = "akeso_data_tag"
+	/*DataNonce   = "akeso_data_nonce"
+	DataTag     = "akeso_data_tag"*/
 )
 
 // value is the string
@@ -46,7 +45,7 @@ func (e MetadataEncodeError) Error() string {
 	return fmt.Sprintf("akeso: can't encode metadata for key %q: %v", e.Key, e.Err)
 }
 
-func MetadataDataNonce(metadata map[string]string) ([]byte, error) {
+/*func MetadataDataNonce(metadata map[string]string) ([]byte, error) {
 	key := DataNonce
 
 	hexNonce, ok := metadata[key]
@@ -110,4 +109,4 @@ func SetMetadataDataTag(metadata map[string]string, tag []byte) error {
 	metadata[key] = b64Tag
 
 	return nil
-}
+}*/
