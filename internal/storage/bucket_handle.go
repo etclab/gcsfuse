@@ -190,6 +190,7 @@ func (b *bucketHandle) StatObject(ctx context.Context,
 
 func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectRequest) (o *gcs.Object, err error) {
 	logger.Debugf("%s:bucketHandle.CreateObject() - %s", SMH_PREFIX, req.Name)
+	isDir := req.Name[len(req.Name)-1] == '/'
 	obj := bh.bucket.Object(req.Name)
 
 	// GenerationPrecondition - If non-nil, the object will be created/overwritten
@@ -219,38 +220,44 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 	}
 
 	// (akeso start)
-	var data []byte
-	data, err = io.ReadAll(req.Contents)
-	if err != nil {
-		err = fmt.Errorf("io.Readall() of local file failed: %w", err)
-		return
+	var encReader io.Reader
+	if !isDir {
+		var data []byte
+		data, err = io.ReadAll(req.Contents)
+		if err != nil {
+			err = fmt.Errorf("io.Readall() of local file failed: %w", err)
+			return
+		}
+
+		nonce := aes256.NewRandomNonce()
+
+		bh.akesoConfig.KeyMutex.RLock()
+		data = aes256.EncryptGCM(bh.akesoConfig.Key, nonce, data, nil)
+		bh.akesoConfig.KeyMutex.RUnlock()
+
+		var ciphertext, tag []byte
+		ciphertext, tag, err = aes256.SplitCiphertextTag(data)
+		if err != nil {
+			err = fmt.Errorf("aes256.SplitCiphertextTag failed: %w", err)
+			return
+		}
+
+		req.Metadata[akeso.StrategyKey] = bh.akesoConfig.Strategy
+		err = akeso.SetMetadataDataTag(req.Metadata, tag)
+		if err != nil {
+			err = fmt.Errorf("set tag failed: %w", err)
+			return
+		}
+		err = akeso.SetMetadataDataNonce(req.Metadata, nonce)
+		if err != nil {
+			err = fmt.Errorf("set nonce failed: %w", err)
+			return
+		}
+
+		encReader = bytes.NewReader(ciphertext)
+	} else {
+		encReader = req.Contents
 	}
-
-	nonce := aes256.NewRandomNonce()
-
-	bh.akesoConfig.KeyMutex.RLock()
-	data = aes256.EncryptGCM(bh.akesoConfig.Key, nonce, data, nil)
-	bh.akesoConfig.KeyMutex.RUnlock()
-
-	ciphertext, tag, err := aes256.SplitCiphertextTag(data)
-	if err != nil {
-		err = fmt.Errorf("aes256.SplitCiphertextTag failed: %w", err)
-		return
-	}
-
-	req.Metadata[akeso.StrategyKey] = bh.akesoConfig.Strategy
-	err = akeso.SetMetadataDataTag(req.Metadata, tag)
-	if err != nil {
-		err = fmt.Errorf("set tag failed: %w", err)
-		return
-	}
-	err = akeso.SetMetadataDataNonce(req.Metadata, nonce)
-	if err != nil {
-		err = fmt.Errorf("set nonce failed: %w", err)
-		return
-	}
-
-	encReader := bytes.NewReader(ciphertext)
 	// (akeso end)
 
 	// Creating a NewWriter with requested attributes, using Go Storage Client.
