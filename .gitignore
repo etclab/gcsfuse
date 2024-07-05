@@ -43,3 +43,6 @@ _testmain.go
 
 # External folders
 vendor/
+
+# Log files
+/smh/logs

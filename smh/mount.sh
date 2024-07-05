@@ -5,6 +5,7 @@
 
 rm -rf smh/run/filecache
 rm -f smh/logs/log.json
+mkdir -p smh/logs/
 
 rm -rf smh/run/filecache-cici
 rm -f smh/logs/log-cici.json
