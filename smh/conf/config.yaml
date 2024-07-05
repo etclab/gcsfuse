@@ -17,10 +17,10 @@ akeso:
     akeso-dir: smh/akeso.d # ensure smh/akeso.d exists
     project-id: ornate-flame-397517
 
-    setup-topic-id: GroupSetup
-    setup-sub-id: GroupSetup-bob
-    update-topic-id: KeyUpdate
-    update-sub-id: KeyUpdate-bob
+    setup-topic-id: GroupSetupv2
+    setup-sub-id: GroupSetupv2-bob
+    update-topic-id: KeyUpdatev2
+    update-sub-id: KeyUpdatev2-bob
 
     key-file: key
 
