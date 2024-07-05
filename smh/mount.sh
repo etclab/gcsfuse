@@ -5,6 +5,7 @@
 
 rm -rf smh/run/filecache
 rm -f smh/logs/log.json
+mkdir -p smh/logs/
 
 ./gcsfuse \
     --config-file smh/conf/config.yaml \
