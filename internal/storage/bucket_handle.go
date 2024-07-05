@@ -191,6 +191,7 @@ func (b *bucketHandle) StatObject(ctx context.Context,
 
 func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectRequest) (o *gcs.Object, err error) {
 	logger.Debugf("%s:bucketHandle.CreateObject() - %s", SMH_PREFIX, req.Name)
+	isDir := req.Name[len(req.Name)-1] == '/'
 	obj := bh.bucket.Object(req.Name)
 
 	// GenerationPrecondition - If non-nil, the object will be created/overwritten
@@ -220,38 +221,44 @@ func (bh *bucketHandle) CreateObject(ctx context.Context, req *gcs.CreateObjectR
 	}
 
 	// (akeso start)
-	var data []byte
-	data, err = io.ReadAll(req.Contents)
-	if err != nil {
-		err = fmt.Errorf("io.Readall() of local file failed: %w", err)
-		return
+	var encReader io.Reader
+	if !isDir {
+		var data []byte
+		data, err = io.ReadAll(req.Contents)
+		if err != nil {
+			err = fmt.Errorf("io.Readall() of local file failed: %w", err)
+			return
+		}
+
+		bh.akesoConfig.KeyMutex.RLock()
+		// TODO: additionalData
+		data, err = nestedaes.Encrypt(data, bh.akesoConfig.Key, aes256.NewRandomIV(), nil)
+		bh.akesoConfig.KeyMutex.RUnlock()
+
+		if err != nil {
+			err = fmt.Errorf("encryption failed: %w", err)
+			return
+		}
+
+		req.Metadata[akeso.StrategyKey] = bh.akesoConfig.Strategy
+
+		var header, ciphertext []byte
+		header, ciphertext, err = nestedaes.SplitHeaderPayload(data)
+		if err != nil {
+			err = fmt.Errorf("nestedaes.SplitHeaderPayload failed: %w", err)
+			return
+		}
+
+		err = akeso.SetMetadataNestedHeader(req.Metadata, header)
+		if err != nil {
+			err = fmt.Errorf("set metadata failed: %w", err)
+			return
+		}
+
+		encReader = bytes.NewReader(ciphertext)
+	} else {
+		encReader = req.Contents
 	}
-
-	bh.akesoConfig.KeyMutex.RLock()
-	// TODO: additionalData
-	data, err = nestedaes.Encrypt(data, bh.akesoConfig.Key, aes256.NewRandomIV(), nil)
-	bh.akesoConfig.KeyMutex.RUnlock()
-
-	if err != nil {
-		err = fmt.Errorf("encryption failed: %w", err)
-		return
-	}
-
-	req.Metadata[akeso.StrategyKey] = bh.akesoConfig.Strategy
-
-	header, ciphertext, err := nestedaes.SplitHeaderPayload(data)
-	if err != nil {
-		err = fmt.Errorf("nestedaes.SplitHeaderPayload failed: %w", err)
-		return
-	}
-
-	err = akeso.SetMetadataNestedHeader(req.Metadata, header)
-	if err != nil {
-		err = fmt.Errorf("set metadata failed: %w", err)
-		return
-	}
-
-	encReader := bytes.NewReader(ciphertext)
 	// (akeso end)
 
 	// Creating a NewWriter with requested attributes, using Go Storage Client.
