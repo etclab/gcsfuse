@@ -10,7 +10,7 @@ require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.12
 	github.com/etclab/aes256 v0.1.1
 	github.com/etclab/art v0.1.0
-	github.com/etclab/nestedaes v0.0.0-20240626053814-7df91f8699c0
+	github.com/etclab/nestedaes v0.0.0-20240707224944-7c3a0f2df0c6
 	github.com/fsouza/fake-gcs-server v1.49.1
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.12.4
