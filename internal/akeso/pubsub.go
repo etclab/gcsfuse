@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/etclab/art"
@@ -16,8 +18,10 @@ func waitForKeyUpdateMessages(ctx context.Context, sub *pubsub.Subscription,
 	ac := config.ArtConfig
 	for {
 		err := sub.Receive(ctx, func(_ context.Context, msg *pubsub.Message) {
+			// time starts here
+			then := time.Now()
+
 			logger.Infof("received pubsub message id %s", msg.ID)
-			SavePubsubMessage(msg, config.PubSubDir)
 
 			// maybe use only one pubsub topic?
 			// check if the tree state exists - if not we can't update the key
@@ -44,9 +48,18 @@ func waitForKeyUpdateMessages(ctx context.Context, sub *pubsub.Subscription,
 					if ok && msgFor == ac.MemberName {
 						// member updates their key and broadcasts the update message
 						msgData := updateKey(msg, config)
+
+						// time taken to update its own key
+						now := time.Now()
+						diff := now.Sub(then)
+						tag := fmt.Sprintf("update_key_%v", attrs["tag"])
+						go saveTimeTaken(diff.Nanoseconds(), config, tag)
+
 						msgAttrs := map[string]string{
 							"messageType": "update_msg",
 							"updatedBy":   ac.MemberName,
+							"tag":         attrs["tag"],
+							"OrderingKey": "update_messages",
 						}
 
 						PublishMessage(ctx, msgData, msgAttrs, config)
@@ -54,15 +67,29 @@ func waitForKeyUpdateMessages(ctx context.Context, sub *pubsub.Subscription,
 						logger.Infof("skipping update_key message meant for: %v", msgFor)
 					}
 				} else if msgType == "update_msg" {
+					if messageAlreadyProcessed(msg, config.PubSubDir) {
+						logger.Infof("message id: %s has already been processed", msg.ID)
+
+						msg.Ack()
+						return
+					}
+
 					if attrs["updatedBy"] == ac.MemberName {
 						logger.Infof("skipping own update message")
 					} else {
 						processUpdateMessage(msg, config)
+
+						// time taken to apply the update_msg
+						now := time.Now()
+						diff := now.Sub(then)
+						tag := fmt.Sprintf("update_msg_%v", attrs["tag"])
+						go saveTimeTaken(diff.Nanoseconds(), config, tag)
 					}
 				} else {
 					logger.Errorf("Unknown message type: %v", msgType)
 				}
 
+				SavePubsubMessage(msg, config.PubSubDir)
 				msg.Ack()
 			} else {
 				logger.Errorf("Missing message type for topic: %v", config.UpdateTopicID)
@@ -74,6 +101,22 @@ func waitForKeyUpdateMessages(ctx context.Context, sub *pubsub.Subscription,
 			os.Exit(1) // TODO: is there a more graceful way?
 		}
 	}
+}
+
+func saveTimeTaken(timeTaken int64, config *Config, tag string) {
+	ac := config.ArtConfig
+	fileName := filepath.Join(config.AkesoDir, ac.GroupName, ac.MemberName, tag)
+	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		logger.Errorf("os.OpenFile failed: %v", err)
+	}
+
+	_, err = f.WriteString(fmt.Sprintf("%v\n", timeTaken))
+	if err != nil {
+		logger.Errorf("f.WriteString failed: %v", err)
+	}
+
+	defer f.Close()
 }
 
 func subscriptionPullLoop(ctx context.Context, sub *pubsub.Subscription,

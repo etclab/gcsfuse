@@ -110,6 +110,13 @@ func SaveUpdateMsg(updateMsg art.UpdateMessage, fileName string) error {
 	return nil
 }
 
+func messageAlreadyProcessed(msg *pubsub.Message, dir string) bool {
+	fileName := msg.PublishTime.Format(time.RFC822) + "-" + msg.ID + ".json"
+	filePath := filepath.Join(dir, fileName)
+
+	return FileExists(filePath)
+}
+
 func SavePubsubMessage(msg *pubsub.Message, dir string) {
 	fileName := msg.PublishTime.Format(time.RFC822) + "-" + msg.ID + ".json"
 	filePath := filepath.Join(dir, fileName)
@@ -128,9 +135,9 @@ func SavePubsubMessage(msg *pubsub.Message, dir string) {
 func PublishMessage(ctx context.Context, data []byte, attrs map[string]string,
 	config *Config) {
 	projectID := config.ProjectID
-	// topicID := config.TopicID
+	topicID := config.UpdateTopicID
 	// todo: get the correct topicID for update messages
-	topicID := "KeyUpdate"
+	// topicID := "KeyUpdate"
 
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
