@@ -34,6 +34,7 @@ var fDir = flag.String("dir", "", "Directory within which to write the file.")
 var fMountCmd = flag.String("mount_cmd", "", "Command to remount bucket. If not passed, never unmounts bucket.")
 var fFileSize = flag.Int64("file_size", 1<<30, "How many bytes to write.")
 var fWriteSize = flag.Int64("write_size", 1<<20, "Size of each call to write(2).")
+var fRawOut = flag.String("raw_out", "", "File to which to append raw results in bytes/sec.")
 
 ////////////////////////////////////////////////////////////////////////
 // main logic
@@ -150,6 +151,35 @@ func run() (err error) {
 			format.Bytes(float64(bytesWritten)),
 			closeDuration,
 			format.Bytes(bytesPerSec))
+	}
+
+	{
+		seconds := float64(writeDuration + closeDuration) / float64(time.Second)
+		bytesPerSec := float64(bytesWritten) / seconds
+
+		fmt.Printf(
+			"Total: %s in %v (%s/s)\n",
+			format.Bytes(float64(bytesWritten)),
+			writeDuration + closeDuration,
+			format.Bytes(bytesPerSec))
+
+		if *fRawOut == "" {
+			return
+		}
+
+		f, err = os.OpenFile(*fRawOut, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+		if err != nil {
+			err = fmt.Errorf("open raw out: %w", err)
+			return
+		}
+
+		_, err = fmt.Fprintf(f, "%f\n", bytesPerSec)
+		if err != nil {
+			return
+		}
+
+		f.Close()
+		return
 	}
 
 	fmt.Println()
