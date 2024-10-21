@@ -40,6 +40,7 @@ var fMountCmd = flag.String("mount_cmd", "", "Command to remount bucket. If not 
 var fDuration = flag.Duration("duration", 10*time.Second, "How long to run.")
 var fFileSize = flag.Int64("file_size", 1<<26, "Size of file to use.")
 var fReadSize = flag.Int64("read_size", 1<<20, "Size of each call to read(2).")
+var fRawOut = flag.String("raw_out", "", "File to which to append raw results in bytes/sec.")
 
 ////////////////////////////////////////////////////////////////////////
 // main logic
@@ -220,6 +221,26 @@ func run() (err error) {
 
 	fmt.Println()
 
+	if *fRawOut == "" {
+		return
+	}
+
+	f, err = os.OpenFile(*fRawOut, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		err = fmt.Errorf("open raw out: %w", err)
+		return
+	}
+
+	for _, dur := range fullFileRead {
+		seconds := float64(dur) / float64(time.Second)
+		bandwidthBytesPerSec := float64(*fFileSize) / seconds
+		_, err = fmt.Fprintf(f, "%f\n", bandwidthBytesPerSec)
+		if err != nil {
+			return
+		}
+	}
+
+	f.Close()
 	return
 }
 
