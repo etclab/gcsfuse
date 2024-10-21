@@ -27,6 +27,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"sort"
 	"time"
 
@@ -35,6 +36,7 @@ import (
 )
 
 var fDir = flag.String("dir", "", "Directory within which to write the file.")
+var fMountCmd = flag.String("mount_cmd", "", "Command to remount bucket. If not passed, never unmounts bucket.")
 var fDuration = flag.Duration("duration", 10*time.Second, "How long to run.")
 var fFileSize = flag.Int64("file_size", 1<<26, "Size of file to use.")
 var fReadSize = flag.Int64("read_size", 1<<20, "Size of each call to read(2).")
@@ -43,9 +45,34 @@ var fReadSize = flag.Int64("read_size", 1<<20, "Size of each call to read(2).")
 // main logic
 ////////////////////////////////////////////////////////////////////////
 
+func mountBucket() (err error) {
+	if *fMountCmd == "" {
+		return
+	}
+
+	err = exec.Command(*fMountCmd).Run()
+	return
+}
+
+func umountBucket() (err error) {
+	if *fMountCmd == "" {
+		return
+	}
+
+	err = exec.Command("fusermount", "-u", *fDir).Run()
+	return
+}
+
 func run() (err error) {
 	if *fDir == "" {
 		err = errors.New("You must set --dir.")
+		return
+	}
+
+	umountBucket()
+	err = mountBucket()
+	if err != nil {
+		err = fmt.Errorf("mountBucket: %w", err)
 		return
 	}
 
@@ -81,6 +108,12 @@ func run() (err error) {
 		return
 	}
 
+	err = umountBucket()
+	if err != nil {
+		err = fmt.Errorf("umountBucket: %w", err)
+		return
+	}
+
 	// Run several iterations.
 	log.Printf("Measuring for %v...", *fDuration)
 
@@ -93,6 +126,12 @@ func run() (err error) {
 
 	overallStartTime := time.Now()
 	for len(fullFileRead) == 0 || time.Since(overallStartTime) < *fDuration {
+		err = mountBucket()
+		if err != nil {
+			err = fmt.Errorf("mountBucket: %w", err)
+			return
+		}
+
 		fileStartTime := time.Now()
 
 		f, err = os.Open(path)
@@ -129,6 +168,12 @@ func run() (err error) {
 
 		case readErr != nil:
 			readErr = fmt.Errorf("Reading: %w", readErr)
+			return
+		}
+
+		err = umountBucket()
+		if err != nil {
+			err = fmt.Errorf("umountBucket: %w", err)
 			return
 		}
 	}
