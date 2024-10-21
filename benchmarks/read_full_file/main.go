@@ -85,47 +85,59 @@ func run() (err error) {
 	log.Printf("Measuring for %v...", *fDuration)
 
 	var fullFileRead percentile.DurationSlice
+	var singleOpenCall percentile.DurationSlice
 	var singleReadCall percentile.DurationSlice
+	var fullReadLoop percentile.DurationSlice
+	var singleCloseCall percentile.DurationSlice
 	buf := make([]byte, *fReadSize)
 
 	overallStartTime := time.Now()
 	for len(fullFileRead) == 0 || time.Since(overallStartTime) < *fDuration {
-		// Open the file for reading.
+		fileStartTime := time.Now()
+
 		f, err = os.Open(path)
+		singleOpenCall = append(singleOpenCall, time.Since(fileStartTime))
 		if err != nil {
 			err = fmt.Errorf("Opening file: %w", err)
 			return
 		}
 
-		// Read the whole thing.
-		fileStartTime := time.Now()
-		for err == nil {
+		readLoopStartTime := time.Now()
+		var readErr error
+		for readErr == nil {
 			readStartTime := time.Now()
-			_, err = f.Read(buf)
+			_, readErr = f.Read(buf)
 			singleReadCall = append(singleReadCall, time.Since(readStartTime))
 		}
+		fullReadLoop = append(fullReadLoop, time.Since(readLoopStartTime))
 
-		fullFileRead = append(fullFileRead, time.Since(fileStartTime))
+		closeStartTime := time.Now()
+		err = f.Close()
 
-		switch {
-		case err == io.EOF:
-			err = nil
+		endTime := time.Now()
+		singleCloseCall = append(singleCloseCall, endTime.Sub(closeStartTime))
+		fullFileRead = append(fullFileRead, endTime.Sub(fileStartTime))
 
-		case err != nil:
-			err = fmt.Errorf("Reading: %w", err)
+		if err != nil {
+			err = fmt.Errorf("Closing file after reading: %w", err)
 			return
 		}
 
-		// Close the file.
-		err = f.Close()
-		if err != nil {
-			err = fmt.Errorf("Closing file after reading: %w", err)
+		switch {
+		case readErr == io.EOF:
+			readErr = nil
+
+		case readErr != nil:
+			readErr = fmt.Errorf("Reading: %w", readErr)
 			return
 		}
 	}
 
 	sort.Sort(fullFileRead)
+	sort.Sort(singleOpenCall)
 	sort.Sort(singleReadCall)
+	sort.Sort(fullReadLoop)
+	sort.Sort(singleCloseCall)
 
 	log.Printf(
 		"Read the file %d times, using %d calls to read(2).",
@@ -154,7 +166,10 @@ func run() (err error) {
 	}
 
 	reportSlice("Full-file read times", *fFileSize, fullFileRead)
-	reportSlice("read(2) latencies", *fReadSize, singleReadCall)
+	reportSlice("open call latencies", 0, singleOpenCall)
+	reportSlice("read(2) single call latencies", *fReadSize, singleReadCall)
+	reportSlice("read loop times", *fFileSize, fullReadLoop)
+	reportSlice("close call latencies", 0, singleCloseCall)
 
 	fmt.Println()
 
