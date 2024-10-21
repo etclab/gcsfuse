@@ -24,12 +24,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/googlecloudplatform/gcsfuse/v2/benchmarks/internal/format"
 )
 
 var fDir = flag.String("dir", "", "Directory within which to write the file.")
+var fMountCmd = flag.String("mount_cmd", "", "Command to remount bucket. If not passed, never unmounts bucket.")
 var fFileSize = flag.Int64("file_size", 1<<30, "How many bytes to write.")
 var fWriteSize = flag.Int64("write_size", 1<<20, "Size of each call to write(2).")
 
@@ -37,9 +39,34 @@ var fWriteSize = flag.Int64("write_size", 1<<20, "Size of each call to write(2).
 // main logic
 ////////////////////////////////////////////////////////////////////////
 
+func mountBucket() (err error) {
+	if *fMountCmd == "" {
+		return
+	}
+
+	err = exec.Command(*fMountCmd).Run()
+	return
+}
+
+func umountBucket() (err error) {
+	if *fMountCmd == "" {
+		return
+	}
+
+	err = exec.Command("fusermount", "-u", *fDir).Run()
+	return
+}
+
 func run() (err error) {
 	if *fDir == "" {
 		err = errors.New("You must set --dir.")
+		return
+	}
+
+	umountBucket()
+	err = mountBucket()
+	if err != nil {
+		err = fmt.Errorf("mountBucket: %w", err)
 		return
 	}
 
@@ -57,7 +84,9 @@ func run() (err error) {
 	// Make sure we clean it up later.
 	defer func() {
 		log.Printf("Deleting %s.", path)
+		mountBucket()
 		os.Remove(path)
+		umountBucket()
 	}()
 
 	// Write the configured number of zeroes to the file, measuing the time
