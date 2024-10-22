@@ -65,11 +65,13 @@ func run() (err error) {
 	}
 
 	umountBucket()
+	time.Sleep(500 * time.Millisecond)
 	err = mountBucket()
 	if err != nil {
 		err = fmt.Errorf("mountBucket: %w", err)
 		return
 	}
+	time.Sleep(500 * time.Millisecond)
 
 	// Create a temporary file.
 	log.Printf("Creating a temporary file in %s.", *fDir)
@@ -88,6 +90,7 @@ func run() (err error) {
 		mountBucket()
 		os.Remove(path)
 		umountBucket()
+		time.Sleep(500 * time.Millisecond)
 	}()
 
 	// Write the configured number of zeroes to the file, measuing the time
@@ -154,13 +157,13 @@ func run() (err error) {
 	}
 
 	{
-		seconds := float64(writeDuration + closeDuration) / float64(time.Second)
+		seconds := float64(writeDuration+closeDuration) / float64(time.Second)
 		bytesPerSec := float64(bytesWritten) / seconds
 
 		fmt.Printf(
 			"Total: %s in %v (%s/s)\n",
 			format.Bytes(float64(bytesWritten)),
-			writeDuration + closeDuration,
+			writeDuration+closeDuration,
 			format.Bytes(bytesPerSec))
 
 		if *fRawOut == "" {

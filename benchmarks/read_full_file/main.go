@@ -71,11 +71,13 @@ func run() (err error) {
 	}
 
 	umountBucket()
+	time.Sleep(500 * time.Millisecond);
 	err = mountBucket()
 	if err != nil {
 		err = fmt.Errorf("mountBucket: %w", err)
 		return
 	}
+	time.Sleep(500 * time.Millisecond);
 
 	// Create a temporary file.
 	log.Printf("Creating a temporary file in %s.", *fDir)
@@ -92,8 +94,10 @@ func run() (err error) {
 	defer func() {
 		log.Printf("Deleting %s.", path)
 		mountBucket()
+		time.Sleep(500 * time.Millisecond);
 		os.Remove(path)
 		umountBucket()
+		time.Sleep(500 * time.Millisecond);
 	}()
 
 	// Fill it with random content.
@@ -117,6 +121,8 @@ func run() (err error) {
 		return
 	}
 
+	time.Sleep(500 * time.Millisecond);
+
 	// Run several iterations.
 	log.Printf("Measuring for %v...", *fDuration)
 
@@ -135,6 +141,7 @@ func run() (err error) {
 			return
 		}
 
+		time.Sleep(500 * time.Millisecond);
 		fileStartTime := time.Now()
 
 		f, err = os.Open(path)
@@ -179,6 +186,7 @@ func run() (err error) {
 			err = fmt.Errorf("umountBucket: %w", err)
 			return
 		}
+		time.Sleep(500 * time.Millisecond);
 	}
 
 	sort.Sort(fullFileRead)
