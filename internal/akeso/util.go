@@ -128,9 +128,9 @@ func SavePubsubMessage(msg *pubsub.Message, dir string) {
 func PublishMessage(ctx context.Context, data []byte, attrs map[string]string,
 	config *Config) {
 	projectID := config.ProjectID
-	// topicID := config.TopicID
+	topicID := config.UpdateTopicID
 	// todo: get the correct topicID for update messages
-	topicID := "KeyUpdate"
+	// topicID := "KeyUpdate"
 
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
