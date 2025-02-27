@@ -1,10 +1,12 @@
 package akeso
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/etclab/art"
@@ -42,14 +44,43 @@ func waitForKeyUpdateMessages(ctx context.Context, sub *pubsub.Subscription,
 
 					msgFor, ok := attrs["messageFor"]
 					if ok && msgFor == ac.MemberName {
-						// member updates their key and broadcasts the update message
-						msgData := updateKey(msg, config)
-						msgAttrs := map[string]string{
-							"messageType": "update_msg",
-							"updatedBy":   ac.MemberName,
+						reencryptCountStr := attrs["reencryptionCount"]
+						logger.Infof("[SMH] logging reencryptCount: %v", reencryptCountStr)
+						if reencryptCountStr == "" {
+							// member updates their key and broadcasts the update message
+							msgData := updateKey(msg, config)
+							msgAttrs := map[string]string{
+								"messageType": "update_msg",
+								"updatedBy":   ac.MemberName,
+							}
+
+							PublishMessage(ctx, msgData, msgAttrs, config)
+						} else {
+							reencryptCount, err := strconv.ParseInt(reencryptCountStr, 10, 64)
+							if err != nil {
+								fmt.Println("Error:", err)
+								return
+							}
+
+							msgDataArray := [][]byte{}
+							// -1 because there's already a first encryption layer
+							for i := 0; i < int(reencryptCount); i++ {
+								msgData := updateKey(msg, config)
+								msgDataArray = append(msgDataArray, msgData)
+							}
+
+							msgAttrs := map[string]string{
+								"messageType":       "update_msg",
+								"updatedBy":         ac.MemberName,
+								"reencryptionCount": reencryptCountStr,
+							}
+
+							separator := []byte{255, 255, 255, 255}
+							flatMsgData := bytes.Join(msgDataArray, separator)
+
+							PublishMessage(ctx, flatMsgData, msgAttrs, config)
 						}
 
-						PublishMessage(ctx, msgData, msgAttrs, config)
 					} else {
 						logger.Infof("skipping update_key message meant for: %v", msgFor)
 					}
