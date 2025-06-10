@@ -5,16 +5,22 @@ Below we outline the dependencies, build and run instructions for the `master` b
 
 - Dependencies
     - Running `gcsfuse` requires `go` and `fuse3`
-    - The required packages can be installed using the command below (note: `./common/install-go.sh` will replace go on your path so skip it if you already have it installed):
+    - The required packages can be installed using the command below (note: please skip `./common/install-go.sh` if you already have `Go` installed - as it'll replace the `Go` on your path, and `./common/install-gcloud.sh` if you already have gcloud cli installed):
         ```bash
-        ./common/install-dependencies.sh && ./common/install-go.sh
+        ./common/install-dependencies.sh && ./common/install-go.sh && ./common/install-gcloud.sh && source ~/.bashrc
         ``` 
 - Build
     ```bash
     ./smh/make.sh
     ```
 - Run
-    - TODO: Ensure you have gcloud credentials setup
+    - Setup Service Account (SA) credentials to access the `atp-master` bucket. This SA credentials has been configured with read and write access to the `atp-master` bucket.
+        ```bash
+        # adjust the service account key path accordingly
+        export GOOGLE_APPLICATION_CREDENTIALS=$HOME/downloads/serviceAccount-ae-pets25-alice.json
+        gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+        ```
+
     - Mount the bucket (mounting the bucket allows accessing the contents of cloud storage bucket as a local folder):
         ```bash
         ./smh/mount.sh
@@ -25,7 +31,18 @@ Below we outline the dependencies, build and run instructions for the `master` b
         ./smh/umount.sh
         ```
 
-- TODO: Variants of Akeso
+### Client Strategies
+
+The required configs, scripts, and the code for running the different client strategies are in their separate branches. The instructions for running these strategies are in their corresponding README.md files.
+
+| Client Strategy | Branch |
+| --- | --- |
+| CSEK | [`akeso-csek`](https://github.com/etclab/gcsfuse/tree/akeso-csek) |
+| CMEK & CMEK-HSM | [`cmek`](https://github.com/etclab/gcsfuse/tree/cmek) |
+| Akeso-Keywrap | [`akeso-keywrap`](https://github.com/etclab/gcsfuse/tree/akeso-keywrap) |
+| Akeso | [`akeso-nested`](https://github.com/etclab/gcsfuse/tree/akeso-nested) |
+| Akeso-Strawman | [`akeso-strawman`](https://github.com/etclab/gcsfuse/tree/akeso-strawman) |
+
 
 <details>
   <summary>Original gcsfuse Readme</summary>
