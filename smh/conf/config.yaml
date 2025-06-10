@@ -1,0 +1,15 @@
+logging:
+    severity: trace
+    format: json
+    file-path: smh/logs/log.json
+
+# cache-dir: smh/run/filecache
+
+# file-cache:
+#     max-size-mb: -1
+#     cache-file-for-range-read: true
+
+# metadata-cache:
+#     ttl-secs: -1
+
+
