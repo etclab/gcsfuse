@@ -1,3 +1,40 @@
+## csek `gcsfuse` strategies
+Please look into the paper for details about `csek` client-side strategie.
+
+Below we outline the dependencies, build and run instructions for the `akeso-csek` branch.
+
+- Dependencies
+    - If you already installed the dependencies for one of the strategies, skip this step.
+    - Running `gcsfuse` requires `go` and `fuse3`
+    - The required packages can be installed using the command below (note: please skip `./common/install-go.sh` if you already have `Go` installed - as it'll replace the `Go` on your path, and `./common/install-gcloud.sh` if you already have gcloud cli installed):
+        ```bash
+        ./common/install-dependencies.sh && ./common/install-go.sh && ./common/install-gcloud.sh && source ~/.bashrc
+        ``` 
+
+- Config Setup
+    - This sets up the required configs and builds the binary
+        ```bash
+        # export the actual project id from the service account file: serviceAccount-ae-pets25-alice.json
+        export GCP_PROJECT_ID=abcd-efgh-12345
+        ./csek.sh setup_csek
+        ```
+
+- Run benchmarks
+    - Setup Service Account (SA) credentials to access the `atp-csek` bucket. This SA credentials has been configured with read and write access to the buckets.
+        ```bash
+        # adjust the service account key path accordingly
+        export GOOGLE_APPLICATION_CREDENTIALS=$HOME/downloads/serviceAccount-ae-pets25-alice.json
+        gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+        ```
+
+    - Run the benchmarks (runs the benchmarks: `read_full_file` and `write_to_gcs`) five times
+        ```bash
+        ./csek.sh benchmark
+        ```
+
+<details>
+  <summary>Original gcsfuse Readme</summary>
+
 [![codecov](https://codecov.io/gh/GoogleCloudPlatform/gcsfuse/graph/badge.svg?token=vNsbSbeea2)](https://codecov.io/gh/GoogleCloudPlatform/gcsfuse)
 
 # Current status
@@ -46,4 +83,4 @@ To see supported operating system and ML frameworks that have been validated wit
 You can get support, submit general questions, and request new features by [filing issues in GitHub](https://github.com/GoogleCloudPlatform/gcsfuse/issues). You can also get support by using one of [Google Cloud's official support channels](https://cloud.google.com/support-hub).
 
 See [Troubleshooting](https://github.com/GoogleCloudPlatform/gcsfuse/blob/master/docs/troubleshooting.md) for common issue handling.
-
+</details>
