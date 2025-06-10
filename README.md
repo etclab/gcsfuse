@@ -32,6 +32,32 @@ Below we outline the dependencies, build and run instructions for the `cmek` bra
         ./cmek.sh benchmark
         ```
 
+- Appendix
+    - For `cmek`, a bucket with a software encryption key is required. For `cmek-hsm`, a bucket with hsm key is required. (this has been already configured for the above two buckets and associated service account)
+        ```bash
+        REGION="us-east1"
+        ZONE="us-east1-b"
+        CMEK_BUCKET_NAME="atp-cmek"
+        CMEK_HSM_BUCKET_NAME="atp-cmek-hsm"
+
+        PROJECT=${GCLOUD_PROJECT_ID}
+
+        # assuming the two keys exist in keyring
+        SOFT_KEY="projects/${PROJECT}/locations/${REGION}/keyRings/atp-keyring/cryptoKeys/soft-key"
+        HSM_KEY="projects/${PROJECT}/locations/${REGION}/keyRings/atp-keyring/cryptoKeys/hsm-key"
+
+        # for software key
+        gcloud storage buckets create gs://${CMEK_BUCKET_NAME} --location=${REGION} \
+            --public-access-prevention --soft-delete-duration=0 \
+            --uniform-bucket-level-access \
+            --default-encryption-key=${SOFT_KEY}
+
+        # for hsm key
+        gcloud storage buckets create gs://${CMEK_HSM_BUCKET_NAME} --location=${REGION} \
+            --public-access-prevention --soft-delete-duration=0 \
+            --uniform-bucket-level-access \
+            --default-encryption-key=${HSM_KEY}
+        ```
 
 <details>
   <summary>Original gcsfuse Readme</summary>
