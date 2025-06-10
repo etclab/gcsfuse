@@ -1,3 +1,49 @@
+## strawman `gcsfuse` strategies
+Please look into the paper for details about `Akeso-strawman` client-side strategie.
+
+Below we outline the dependencies, build and run instructions for the `akeso-strawman` branch.
+
+- Dependencies
+    - If you already installed the dependencies for one of the strategies, skip this step.
+    - Running `gcsfuse` requires `go` and `fuse3`
+    - The required packages can be installed using the command below (note: please skip `./common/install-go.sh` if you already have `Go` installed - as it'll replace the `Go` on your path, and `./common/install-gcloud.sh` if you already have gcloud cli installed):
+        ```bash
+        ./common/install-dependencies.sh && ./common/install-go.sh && ./common/install-gcloud.sh && source ~/.bashrc
+        ``` 
+
+- Config Setup
+    - This sets up the required configs and builds the binary
+        ```bash
+        # export the actual project id from the service account file: serviceAccount-ae-pets25-alice.json
+        export GCP_PROJECT_ID=abcd-efgh-12345
+        ./strawman.sh setup_strawman
+        ```
+
+- Run benchmarks
+    - Setup Service Account (SA) credentials to access the `atp-strawman` bucket. This SA credentials has been configured with read and write access to the buckets.
+        ```bash
+        # adjust the service account key path accordingly
+        export GOOGLE_APPLICATION_CREDENTIALS=$HOME/downloads/serviceAccount-ae-pets25-alice.json
+        gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+        ```
+
+    - Run the benchmarks (runs the benchmarks: `read_full_file` and `write_to_gcs`) five times
+        ```bash
+        ./strawman.sh benchmark
+        ```
+
+- Appendix
+    - To create Pub/Sub topics and subscriptions (the topics and subscriptions for the above benchmark has been created and enabled for the service account)
+        ```
+        gcloud pubsub topics create atp-group-setup
+        gcloud pubsub topics create atp-key-update
+
+        gcloud pubsub subscriptions create atp-group-setup-bob --topic=atp-group-setup
+        gcloud pubsub subscriptions create atp-key-update-bob --topic=atp-key-update
+        ```
+<details>
+  <summary>Original gcsfuse Readme</summary>
+
 [![codecov](https://codecov.io/gh/GoogleCloudPlatform/gcsfuse/graph/badge.svg?token=vNsbSbeea2)](https://codecov.io/gh/GoogleCloudPlatform/gcsfuse)
 
 # Current status
@@ -47,3 +93,4 @@ You can get support, submit general questions, and request new features by [fili
 
 See [Troubleshooting](https://github.com/GoogleCloudPlatform/gcsfuse/blob/master/docs/troubleshooting.md) for common issue handling.
 
+</details>
