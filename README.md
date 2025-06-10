@@ -32,6 +32,15 @@ Below we outline the dependencies, build and run instructions for the `akeso-cse
         ./csek.sh benchmark
         ```
 
+- Appendix
+    - To create Pub/Sub topics and subscriptions (the topics and subscriptions for the above benchmark has been created and enabled for the service account)
+        ```
+        gcloud pubsub topics create atp-group-setup
+        gcloud pubsub topics create atp-key-update
+
+        gcloud pubsub subscriptions create atp-group-setup-bob --topic=atp-group-setup
+        gcloud pubsub subscriptions create atp-key-update-bob --topic=atp-key-update
+        ```
 <details>
   <summary>Original gcsfuse Readme</summary>
 
