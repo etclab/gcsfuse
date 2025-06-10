@@ -1,0 +1,6 @@
+logging:
+    severity: trace
+    format: json
+    file-path: smh/logs/log.json
+
+cache-dir: smh/run/filecache

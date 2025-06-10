@@ -1,3 +1,35 @@
+## `gcsfuse`
+We implement Akeso clients using `gcsfuse`. We extend the `gcsfuse`'s caching layer to invoke the nested decryption operations when fetching an object from cloud storage, and to re-apply these layers when uploading a modified object.
+
+Below we outline the dependencies, build and run instructions for the `master` branch. We provide further details and scripts to run the different variants of Akeso later.
+
+- Dependencies
+    - Running `gcsfuse` requires `go` and `fuse3`
+    - The required packages can be installed using the command below (note: `./common/install-go.sh` will replace go on your path so skip it if you already have it installed):
+        ```bash
+        ./common/install-dependencies.sh && ./common/install-go.sh
+        ``` 
+- Build
+    ```bash
+    ./smh/make.sh
+    ```
+- Run
+    - TODO: Ensure you have gcloud credentials setup
+    - Mount the bucket (mounting the bucket allows accessing the contents of cloud storage bucket as a local folder):
+        ```bash
+        ./smh/mount.sh
+        ```
+    - A Google cloud storage bucket gets mounted into the `./mnt` folder where you can write or read files.
+    - Unmount the bucket:
+        ```bash
+        ./smh/umount.sh
+        ```
+
+- TODO: Variants of Akeso
+
+<details>
+  <summary>Original gcsfuse Readme</summary>
+
 [![codecov](https://codecov.io/gh/GoogleCloudPlatform/gcsfuse/graph/badge.svg?token=vNsbSbeea2)](https://codecov.io/gh/GoogleCloudPlatform/gcsfuse)
 
 # Current status
@@ -47,3 +79,4 @@ You can get support, submit general questions, and request new features by [fili
 
 See [Troubleshooting](https://github.com/GoogleCloudPlatform/gcsfuse/blob/master/docs/troubleshooting.md) for common issue handling.
 
+</details>
